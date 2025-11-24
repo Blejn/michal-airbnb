@@ -1,0 +1,37 @@
+# Aplikacja - Wyszukiwarka dla istniejącej już strony TOPCAR związanej z motoryzacja i importem aut oraz kupnem(MVP)
+
+### Główny problem
+
+Użytkownicy zainteresowani zakupem pojazdów z aukcji zagranicznych (Copart, IAAI) nie mają dostępu do prostego i intuicyjnego narzędzia, które pozwoliłoby im przeglądać dostępne auta, filtrować je według podstawowych parametrów oraz szybko uzyskać pomoc eksperta. Obecnie istniejące portale prezentują dużą ilość danych technicznych, wymagają wiedzy o przebiegu aukcji oraz samodzielnej oceny ryzyka, co odstrasza potencjalnych klientów nieznających procesu importu.
+
+Brakuje rozwiązania, które zamiast kierować użytkownika do licytacji, prowadzi go do kontaktu i bezpiecznej konsultacji zakupu, prezentując jedynie kluczowe informacje: marka, model, rok, przebieg, status aukcji i podstawowe dane o pojeździe. Problemem jest również brak możliwości wyszukiwania pojazdów w jednym miejscu bez konieczności ręcznego sprawdzania na wielu platformach.
+
+Klient chciałby szybko znaleźć auto spełniające jego kryteria, zobaczyć podsumowanie najważniejszych parametrów oraz otrzymać pomoc ekspertów w ocenie opłacalności zakupu, zamiast samodzielnie analizować skomplikowane dane aukcyjne. Naszym celem jest rozwiązanie tej bariery poprzez stworzenie wyszukiwarki, która pełni funkcję doradczą i sprzedażową, a nie tylko informacyjną.
+
+Warto zaznaczyć e strona ju jest a my jedyne co robimy to zakładke, mamy ju baze na supabase w której klient juz trzyma dane wiec musimy zintegrować, moim osobistym zdaniem next.js bedzie idealny bo mozemy zrobic server i client side a do backendu wykorzystac routes
+
+### Najmniejszy zestaw funkcjonalności
+
+Minimalna wersja produktu musi umożliwiać użytkownikowi wyszukanie pojazdu na podstawie kluczowych filtrów takich jak marka, model, rocznik, typ aukcji (Copart/IAAI) oraz numer VIN lub numer LOT. Po wprowadzeniu kryteriów wyszukiwania użytkownik otrzymuje listę wyników zawierającą podstawowe parametry pojazdu, zdjęcie, status aukcji oraz skrócone informacje techniczne. Każdy wynik powinien posiadać widoczny przycisk „Skontaktuj się”, który po kliknięciu automatycznie przesyła numer VIN lub link do wybranego pojazdu do naszego zespołu. Użytkownik nie dokonuje samodzielnej licytacji – zamiast tego otrzymuje możliwość bezpłatnej konsultacji zakupu. Dodatkowo system powinien umożliwiać podgląd szczegółów pojazdu na dedykowanej podstronie z uproszczonym opisem i galerią zdjęć. Całość ma działać szybko, intuicyjnie i pełnić funkcję doradczą, a nie aukcyjną.
+
+W wersji MVP nie będzie dostępna możliwość rejestracji użytkowników, logowania ani tworzenia indywidualnych kont i profili. System nie będzie udostępniał funkcji samodzielnej licytacji, składania ofert czy realizacji płatności online. Na tym etapie nie planuje się wdrażania rozszerzonych kalkulatorów całkowitego kosztu importu, raportów historii pojazdu VIN ani szczegółowej analizy opłacalności. Panel administracyjny z zarządzaniem użytkownikami, rozliczeniami czy monitorowaniem etapów importu również nie jest częścią MVP. Nie będzie także integracji z systemami CRM ani generowania automatycznych dokumentów celnych.
+
+Wyjątkiem są powiadomienia e-mail – które wchodzą w zakres MVP. Funkcjonalność „Skontaktuj się” ma działać w ten sposób, że użytkownik wybiera pojazd, wpisuje swój adres e-mail lub numer telefonu, a system automatycznie przesyła zgłoszenie do naszego zespołu z informacjami o pojeździe (numer VIN/LOT, link) oraz danymi kontaktowymi użytkownika. Jest to kluczowy element walidacji i generowania leadów, dlatego pozostaje częścią MVP.
+
+### Kryteria sukcesu
+
+Sukces MVP będzie mierzony skutecznością działania wyszukiwarki oraz generowaniem realnych zgłoszeń od użytkowników. Wyszukiwarka musi działać szybko, poprawnie interpretować filtry (marka, model, rok, typ aukcji, VIN/LOT) i zwracać wyniki w czasie nieprzekraczającym kilku sekund. Kluczowe jest, aby prezentowane pojazdy były zgodne z kryteriami użytkownika, a interfejs był intuicyjny i umożliwiał bezproblemową nawigację.
+
+Drugim głównym kryterium sukcesu jest skuteczność systemu kontaktowego. Funkcja „Skontaktuj się” musi niezawodnie przesyłać zgłoszenia na e-mail zespołu wraz z automatycznie załączonym numerem VIN/LOT i danymi użytkownika. Potwierdzenie wysłania wiadomości powinno być natychmiastowe i widoczne dla użytkownika.
+
+MVP będzie uznane za skuteczne, jeśli użytkownicy będą w stanie:
+
+Wyszukać pojazd zgodnie z podanymi kryteriami,
+
+Wyświetlić szczegóły pojazdu,
+
+Wysłać zgłoszenie kontaktowe z poziomu wyników lub podstrony pojazdu,
+
+A zespół otrzyma to zgłoszenie bez utraty danych i z pełnym kontekstem wyboru użytkownika.
+
+Realnym miernikiem sukcesu będzie liczba poprawnie wygenerowanych leadów oraz brak błędów w przesyłaniu danych kontaktowych i numerów VIN – ponieważ to bezpośrednio weryfikuje użyteczność rozwiązania i jego potencjał biznesowy.

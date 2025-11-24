@@ -1,0 +1,1456 @@
+---
+alwaysApply: true
+---
+
+# Dokument Wymagań Produktu (PRD) - TOPCAR Wyszukiwarka Pojazdów
+
+## 1. Przegląd Produktu
+
+### 1.1 Nazwa Produktu
+
+TOPCAR Wyszukiwarka Pojazdów - Moduł wyszukiwania i prezentacji pojazdów z aukcji zagranicznych (Copart, IAAI)
+
+### 1.2 Cel Produktu
+
+Stworzenie intuicyjnej wyszukiwarki pojazdów z aukcji zagranicznych, która umożliwia użytkownikom szybkie znalezienie interesujących aut oraz łatwy kontakt z zespołem ekspertów TOPCAR w celu uzyskania pomocy w procesie zakupu i importu.
+
+### 1.3 Wizja
+
+Produkt ma stanowić narzędzie doradczo-sprzedażowe, które eliminuje barierę techniczną dla osób nieznających procesu importu pojazdów z USA i Kanady. Zamiast zmuszać użytkowników do samodzielnej analizy skomplikowanych danych aukcyjnych, wyszukiwarka prezentuje kluczowe informacje w przystępny sposób i kieruje do konsultacji z ekspertami.
+
+### 1.4 Grupa Docelowa
+
+- Osoby fizyczne zainteresowane zakupem pojazdu z aukcji zagranicznych (Copart, IAAI)
+- Klienci nieposiadający wiedzy o procesie importu aut
+- Osoby szukające pojazdu według konkretnych kryteriów (marka, model, rocznik)
+- Klienci posiadający numer VIN konkretnego pojazdu
+- Użytkownicy poszukujący pomocy eksperta w ocenie opłacalności zakupu
+
+### 1.5 Kontekst Techniczny
+
+- Platforma: Aplikacja webowa Next.js 15 (App Router)
+- Integracja: Osadzenie w istniejącej stronie WordPress TOPCAR jako SPA pod adresem /znajdz-auto
+- Baza danych: Supabase PostgreSQL z ~469,825 rekordami pojazdów
+- Hosting: Vercel
+- Email: Resend dla wysyłki zgłoszeń kontaktowych
+- Język interfejsu: Polski
+- Urządzenia: Desktop i Mobile (równie priorytetowe, mobile first approach)
+
+### 1.6 Harmonogram
+
+- Termin realizacji MVP: 2 tygodnie (pół miesiąca)
+- Zespół: 1 osoba (developer)
+
+### 1.7 Kluczowe Założenia
+
+- Dane pojazdów są zarządzane przez klienta w Supabase - aplikacja tylko odczytuje
+- Aplikacja nie obsługuje licytacji ani płatności - skupia się na lead generation
+- Header, menu i stopka WordPressa pozostają bez zmian
+- Design zgodny z istniejącą stroną TOPCAR
+- Brak systemu logowania i profili użytkowników w MVP
+
+## 2. Problem Użytkownika
+
+### 2.1 Główny Problem
+
+Użytkownicy zainteresowani zakupem pojazdów z aukcji zagranicznych (Copart, IAAI) nie mają dostępu do prostego i intuicyjnego narzędzia, które pozwoliłoby im:
+
+- Przeglądać dostępne auta w jednym miejscu
+- Filtrować pojazdy według podstawowych parametrów
+- Szybko uzyskać pomoc eksperta bez konieczności samodzielnej analizy ryzyka
+
+### 2.2 Szczegóły Problemu
+
+Istniejące portale aukcyjne:
+
+- Prezentują dużą ilość skomplikowanych danych technicznych
+- Wymagają wiedzy o przebiegu aukcji i ocenie stanu pojazdu
+- Zmuszają do samodzielnej oceny ryzyka zakupu
+- Wymagają ręcznego sprawdzania wielu platform
+- Nie oferują prostego kontaktu z ekspertem
+
+### 2.3 Konsekwencje Problemu
+
+- Potencjalni klienci rezygnują z zakupu z uwagi na brak wiedzy
+- Strach przed samodzielnym importem
+- Utrata czasu na przeglądanie wielu platform
+- Brak możliwości szybkiej konsultacji z ekspertem
+- Utracone możliwości biznesowe dla TOPCAR
+
+### 2.4 Oczekiwane Rozwiązanie
+
+Użytkownicy potrzebują narzędzia, które:
+
+- Pozwala znaleźć pojazd spełniający kryteria w jednym miejscu
+- Prezentuje kluczowe informacje w przystępny sposób (bez technicznych detali)
+- Umożliwia szybki kontakt z ekspertem w sprawie konkretnego pojazdu
+- Prowadzi do bezpiecznej konsultacji zamiast do samodzielnej licytacji
+- Działa szybko i intuicyjnie bez konieczności instrukcji
+
+## 3. Wymagania Funkcjonalne
+
+### 3.1 Wyszukiwarka i Filtrowanie (RF-001)
+
+Opis: System zaawansowanego filtrowania pojazdów z możliwością sortowania i paginacji wyników.
+
+Szczegółowe wymagania:
+
+- Panel filtrów z opcjami: marka, model, rocznik (zakres lat), typ aukcji (Copart/IAAI), VIN/LOT
+- Filtry kaskadowe - wybór marki ogranicza dostępne modele
+- Dedykowane pole do szybkiego wyszukiwania po VIN (przekierowanie do strony szczegółów)
+- Dynamiczne pobieranie marek i modeli z pola title w bazie danych
+- Parsowanie title w formacie "YYYY Marka Model, Wersja" (np. "2005 Toyota Camry, LE")
+- Domyślne sortowanie po polu kalendarz (najnowsze najpierw)
+- Parametry wyszukiwania kodowane w URL (query params) dla możliwości udostępniania
+- Obsługa pustych filtrów - wyświetlanie najnowszych pojazdów
+- Czas zwracania wyników < 3 sekundy dla typowych zapytań
+
+Pola bazy danych:
+
+- title (TEXT) - do ekstrahowania marki, modelu, roku
+- vin (TEXT) - dla wyszukiwania po VIN
+- kalendarz (TIMESTAMPTZ) - dla sortowania
+- seller (TEXT) - dla filtra typ aukcji (Copart/IAAI)
+
+### 3.2 Lista Wyników z Paginacją (RF-002)
+
+Opis: Prezentacja pojazdów spełniających kryteria w formie kafelków z podstawowymi informacjami.
+
+Szczegółowe wymagania:
+
+- Wyświetlanie wyników w formie kafelków/kart
+- Każdy kafelek zawiera:
+  - Zdjęcie główne (pierwsze z zdjecia_json lub imagelinksbid)
+  - Model i rok (z title)
+  - Cenę (z cena)
+  - Podstawowe specs (wybrane z specs JSON)
+  - Przycisk "Skontaktuj się"
+- Paginacja dla obsługi dużego wolumenu (469k+ rekordów)
+- Skeleton screens podczas ładowania wyników
+- Komunikat "Brak wyników" z sugestiami alternatywnymi
+- Responsywny layout - kafelki dostosowują się do szerokości ekranu
+- Lazy loading obrazków dla optymalizacji wydajności
+
+Pola bazy danych:
+
+- title (TEXT)
+- cena (TEXT/NUMERIC)
+- zdjecia_json (ARRAY \_text)
+- imagelinksbid (ARRAY \_text)
+- specs (TEXT/JSON)
+
+### 3.3 Strona Szczegółów Pojazdu (RF-003)
+
+Opis: Dedykowana podstrona z pełnymi informacjami o wybranym pojeździe.
+
+Szczegółowe wymagania:
+
+- URL: /znajdz-auto/[id] lub /znajdz-auto/[vin]
+- Sekcja podstawowych informacji:
+  - Model, rok (z title)
+  - VIN (z vin)
+  - Cena (z cena)
+  - Seller/typ aukcji (z seller)
+  - Link do aukcji zewnętrznej (z link) - otwarcie w nowej karcie
+- Sekcja specyfikacji z pola specs (format JSON):
+  - Numer aukcyjny
+  - VIN
+  - Przebieg (mile i kilometry)
+  - Sprzedający
+  - Dokument
+  - Uszkodzenie
+  - Status
+- Galeria zdjęć:
+  - Wszystkie zdjęcia z zdjecia_json i imagelinksbid
+  - Lightbox do przeglądania w pełnym rozmiarze
+  - Nawigacja między zdjęciami (poprzednie/następne)
+  - Funkcja zoom
+- Przycisk "Skontaktuj się" prowadzący do formularza kontaktowego
+- Meta tagi dla SEO (title, description, Open Graph)
+- Obrazy optymalizowane przez Next.js Image component
+
+Pola bazy danych:
+
+- id (BIGINT)
+- title (TEXT)
+- vin (TEXT)
+- cena (TEXT)
+- seller (TEXT)
+- link (TEXT)
+- specs (TEXT/JSON)
+- zdjecia_json (ARRAY \_text)
+- imagelinksbid (ARRAY \_text)
+
+### 3.4 System Kontaktowy z Wysyłką Emaili (RF-004)
+
+Opis: Formularz kontaktowy z automatyczną wysyłką zgłoszeń do zespołu TOPCAR i potwierdzeniem dla użytkownika.
+
+Szczegółowe wymagania:
+
+- Modal/overlay z formularzem kontaktowym
+- Pola formularza:
+  - Imię (wymagane)
+  - Email (wymagane, walidacja formatu)
+  - Telefon (wymagane, format polski/międzynarodowy)
+  - Komentarz (opcjonalne, textarea)
+  - Checkbox zgody RODO (wymagany)
+- Automatyczne dołączanie do zgłoszenia:
+  - VIN wybranego pojazdu
+  - Link do strony szczegółów pojazdu
+  - Timestamp zgłoszenia
+- Walidacja:
+  - Po stronie klienta (instant feedback)
+  - Po stronie serwera (bezpieczeństwo)
+  - Komunikaty błędów w języku polskim
+- Wysyłka emaili przez Resend:
+  - Email do zespołu TOPCAR (adres z zmiennej środowiskowej)
+  - Email potwierdzający do użytkownika
+- Komunikat potwierdzenia wysłania (sukces/błąd)
+- Rate limiting - maksymalna liczba zgłoszeń z jednego IP
+- Czas odpowiedzi < 5 sekund
+- Dostępność z dwóch miejsc:
+  - Kafelek pojazdu na liście wyników
+  - Strona szczegółów pojazdu
+
+Integracja:
+
+- Resend SDK do wysyłki emaili
+- Next.js Route Handler (API endpoint)
+- Zmienne środowiskowe dla credentials
+
+### 3.5 Integracja z Supabase (RF-005)
+
+Opis: Połączenie z istniejącą bazą danych Supabase w trybie tylko do odczytu.
+
+Szczegółowe wymagania:
+
+- Supabase Client z credentials z zmiennych środowiskowych
+- Tylko operacje READ - brak możliwości modyfikacji danych
+- Obsługa ~469,825 rekordów
+- Optymalizacja zapytań:
+  - Wykorzystanie indexów (jeśli dostępne)
+  - Limit wyników z paginacją
+  - Select tylko potrzebnych kolumn
+- Cache'owanie popularnych zapytań (Next.js cache)
+- Error handling dla niedostępności bazy
+- Connection pooling dla wydajności
+
+Struktura danych (tabela pojazdów):
+
+- id (BIGINT, PRIMARY KEY)
+- created_at (TIMESTAMPTZ)
+- title (TEXT) - "YYYY Marka Model, Wersja"
+- vin (TEXT)
+- cena (TEXT)
+- seller (TEXT) - Copart/IAAI
+- link (TEXT) - URL do aukcji
+- kalendarz (TEXT) - data dodania
+- specs (TEXT/JSON) - specyfikacje pojazdu
+- zdjecia_json (ARRAY \_text) - linki do zdjęć
+- imagelinksbid (ARRAY \_text) - dodatkowe zdjęcia
+- fetched (BOOLEAN)
+- fetched_photos (BOOLEAN)
+
+### 3.6 Integracja z WordPressem (RF-006)
+
+Opis: Osadzenie aplikacji Next.js w istniejącej stronie WordPress TOPCAR.
+
+Szczegółowe wymagania:
+
+- Aplikacja dostępna pod /znajdz-auto w ramach strony WP
+- Zachowanie header, menu i stopki z WordPressa
+- Spójny design z istniejącą stroną (kolory, fonty, spacing)
+- Routing wewnątrz aplikacji Next.js (/znajdz-auto/[id])
+- Brak konfliktów stylów CSS między WP a Next.js
+- Wspólna nawigacja - linki w menu WP działają poprawnie
+
+Metoda integracji (do ustalenia):
+
+- Osadzenie przez iframe, lub
+- Custom WordPress endpoint z renderowaniem Next.js, lub
+- WordPress plugin do integracji
+
+### 3.7 Responsywność i UX (RF-007)
+
+Opis: Optymalizacja interfejsu dla urządzeń mobilnych i desktop.
+
+Szczegółowe wymagania:
+
+- Mobile first approach - priorytet projektowania od mobile
+- Breakpoints responsywne (mobile, tablet, desktop)
+- Touch-friendly controls na urządzeniach mobilnych
+- Filtry na mobile: drawer lub accordion dla oszczędności miejsca
+- Loading states:
+  - Skeleton screens dla listy wyników
+  - Loadery dla formularza
+  - Progressive loading dla galerii zdjęć
+- Accessibility:
+  - Semantyczny HTML
+  - ARIA labels gdzie potrzeba
+  - Keyboard navigation
+  - Contrasts zgodne z WCAG 2.1 AA
+- Performance:
+  - Lighthouse score > 80 dla Performance
+  - Lighthouse score > 80 dla Accessibility
+  - First Contentful Paint < 2s
+  - Time to Interactive < 5s
+
+### 3.8 SEO i Indeksowanie (RF-008)
+
+Opis: Optymalizacja dla wyszukiwarek internetowych.
+
+Szczegółowe wymagania:
+
+- Server-side rendering (SSR) dla stron szczegółów pojazdów
+- Meta tagi dla każdej strony:
+  - title (unikalne, opisowe)
+  - description
+  - Open Graph (og:title, og:description, og:image)
+  - Twitter Card
+- Sitemap.xml dla stron szczegółów pojazdów
+- Robots.txt z odpowiednimi regułami
+- Structured data (JSON-LD) dla pojazdów
+- Canonical URLs
+- Alt text dla wszystkich obrazków
+
+### 3.9 Bezpieczeństwo i Ochrona Danych (RF-009)
+
+Opis: Zabezpieczenie aplikacji i zgodność z RODO.
+
+Szczegółowe wymagania:
+
+- Polityka prywatności (link w stopce/formularzu)
+- Checkbox zgody RODO w formularzu (wymagany)
+- Rate limiting:
+  - Formularz kontaktowy: max 5 zgłoszeń/godzinę z jednego IP
+  - API endpoints: max 100 requestów/minutę z jednego IP
+- Walidacja server-side wszystkich inputów
+- Sanityzacja danych wejściowych (XSS protection)
+- HTTPS only
+- Secure headers (CSP, X-Frame-Options, etc.)
+- Zmienne środowiskowe dla wszystkich credentials
+- Brak logowania wrażliwych danych (VIN w logach jest OK)
+
+## 4. Granice Produktu
+
+### 4.1 Co Jest w Zakresie MVP
+
+Funkcjonalności wchodzące w zakres minimalnego produktu (MVP):
+
+- Wyszukiwarka z filtrami (marka, model, rok, typ aukcji, VIN/LOT)
+- Lista wyników z paginacją i podstawowymi informacjami
+- Strona szczegółów pojazdu z pełnymi danymi i galerią
+- Formularz kontaktowy z automatyczną wysyłką emaili (Resend)
+- Integracja z Supabase (read-only)
+- Osadzenie w WordPressie jako SPA pod /znajdz-auto
+- Responsywność (mobile i desktop)
+- Skeleton screens i loading states
+- Zgodność z RODO (polityka, zgody)
+- SEO (meta tagi, sitemap, SSR dla szczegółów)
+- Cache'owanie popularnych zapytań
+- Udostępnianie wyszukiwań przez URL z query params
+
+### 4.2 Co NIE Jest w Zakresie MVP
+
+Funkcjonalności odroczone do przyszłych iteracji:
+
+- Rejestracja i logowanie użytkowników
+- System profili użytkowników
+- Zapisywanie ulubionych pojazdów (wymaga logowania)
+- Historia wyszukiwań użytkownika
+- Powiadomienia push/email o nowych pojazdach
+- Kalkulator całkowitego kosztu importu
+- Raporty historii pojazdu VIN (Carfax, AutoCheck)
+- Szczegółowa analiza opłacalności zakupu
+- Panel administracyjny dla zespołu TOPCAR
+- Zarządzanie użytkownikami i rozliczeniami
+- Monitoring etapów importu pojazdu
+- Integracja z systemem CRM
+- Generowanie automatycznych dokumentów celnych
+- Możliwość samodzielnej licytacji/składania ofert
+- Płatności online
+- Zaawansowana analityka (Google Analytics, Hotjar)
+- Przechowywanie leadów w dedykowanej tabeli bazy danych
+- Wersje językowe inne niż polski
+- System raportowania statusu zgłoszenia
+- Chat/komunikator na żywo
+- Portal partnerski dla dealerów
+
+### 4.3 Założenia i Zależności
+
+Założenia projektu:
+
+- Klient zarządza danymi pojazdów w Supabase - aplikacja tylko odczytuje
+- Dane w bazie są aktualne i poprawne
+- Struktura danych w Supabase nie zmieni się podczas developmentu
+- Klient dostarczy credentials do Supabase (dev i prod)
+- Strona WordPress TOPCAR jest stabilna i gotowa do integracji
+- Klient dostarczy brand guidelines (kolory, fonty)
+- Klient przygotuje treści emaili (szablony)
+- Klient przygotuje teksty RODO i polityki prywatności
+- Resend API jest dostępne i stabilne
+- Vercel hosting jest skonfigurowany
+
+Zależności zewnętrzne:
+
+- Supabase (baza danych)
+- Resend (wysyłka emaili)
+- Vercel (hosting)
+- WordPress (platforma głównej strony)
+- Dostępność aukcji Copart i IAAI (linki zewnętrzne)
+
+### 4.4 Ograniczenia Techniczne
+
+Znane ograniczenia:
+
+- Czas realizacji: 2 tygodnie (wymaga priorytetyzacji funkcji)
+- Zespół: 1 osoba (developer)
+- Wolumen danych: ~469,825 rekordów (wymaga paginacji i cache'owania)
+- Parsowanie title: format nie zawsze spójny - wymaga obsługi edge cases
+- Integracja z WP: metoda do ustalenia (może wymagać dodatkowego czasu)
+- Brak dostępu do API Copart/IAAI - dane zarządzane manualnie przez klienta
+
+### 4.5 Ryzyka Projektu
+
+Zidentyfikowane ryzyka:
+
+- Niejednolity format danych w polu title (rocznik, marka, model)
+- Brak przykładowych danych z Supabase przed startem developmentu
+- Opóźnienia w otrzymaniu brand guidelines i screenshotów
+- Nieznana metoda integracji z WordPressem
+- Potencjalne problemy z wydajnością przy dużym wolumenie danych
+- Rate limiting Resend (darmowy tier)
+- Supabase może mieć RLS (Row Level Security) - wymaga konfiguracji
+- Brak zdjęć dla niektórych pojazdów
+
+Mitigation strategies:
+
+- Przygotowanie fallback dla parsowania title
+- Użycie mock data do czasu otrzymania rzeczywistych danych
+- Rozpoczęcie od core features niezależnych od designu
+- Przygotowanie 2-3 opcji integracji z WP
+- Implementacja paginacji i cache'owania od początku
+- Sprawdzenie limitów Resend przed implementacją
+- Early testing z rzeczywistymi danymi Supabase
+- Fallback image placeholder dla brakujących zdjęć
+
+## 5. Historyjki Użytkowników
+
+### US-001: Przeglądanie Najnowszych Pojazdów
+
+Tytuł: Jako użytkownik chcę zobaczyć najnowsze pojazdy bez ustawiania filtrów
+
+Opis:
+Użytkownik wchodzi na stronę /znajdz-auto i od razu widzi listę najnowszych dodanych pojazdów bez konieczności wybierania jakichkolwiek filtrów.
+
+Kryteria akceptacji:
+
+- Strona /znajdz-auto ładuje się z pustymi filtrami
+- Wyświetlanych jest domyślnie 12/24/48 najnowszych pojazdów (do ustalenia)
+- Pojazdy posortowane według pola kalendarz (najnowsze najpierw)
+- Każdy kafelek zawiera: zdjęcie, model, rok, cenę, przycisk "Skontaktuj się"
+- Skeleton screens wyświetlane podczas ładowania
+- Paginacja widoczna jeśli więcej niż 1 strona wyników
+- Czas ładowania < 3 sekundy
+
+### US-002: Filtrowanie Według Marki
+
+Tytuł: Jako użytkownik chcę wybrać markę pojazdu aby zobaczyć tylko auta danej marki
+
+Opis:
+Użytkownik wybiera markę z listy rozwijanej/dropdown w panelu filtrów. Lista wyników aktualizuje się pokazując tylko pojazdy wybranej marki.
+
+Kryteria akceptacji:
+
+- Dropdown/select z listą wszystkich dostępnych marek
+- Lista marek pobrana dynamicznie z bazy (unikalne wartości z title)
+- Marki posortowane alfabetycznie
+- Po wyborze marki lista wyników aktualizuje się automatycznie
+- Licznik pokazuje ile pojazdów spełnia kryteria
+- URL aktualizuje się z parametrem ?marka=Toyota
+- Loading state podczas aktualizacji wyników
+- Możliwość zresetowania filtru (przycisk "X" lub "Wyczyść")
+
+### US-003: Filtrowanie Według Marki i Modelu (Kaskadowe)
+
+Tytuł: Jako użytkownik chcę wybrać model po wybraniu marki
+
+Opis:
+Po wybraniu marki, dropdown modeli staje się aktywny i pokazuje tylko modele dostępne dla wybranej marki (filtry kaskadowe).
+
+Kryteria akceptacji:
+
+- Dropdown modeli nieaktywny dopóki nie wybrano marki
+- Po wyborze marki dropdown modeli aktywuje się
+- Lista modeli zawiera tylko modele dostępne dla wybranej marki
+- Modele posortowane alfabetycznie
+- Po wyborze modelu wyniki filtrują się do marki + model
+- URL aktualizuje się: ?marka=Toyota&model=Camry
+- Jeśli użytkownik zmieni markę, model resetuje się do "Wszystkie"
+- Loading state podczas aktualizacji
+
+### US-004: Filtrowanie Według Roku Produkcji
+
+Tytuł: Jako użytkownik chcę wybrać zakres lat produkcji pojazdu
+
+Opis:
+Użytkownik może ustawić minimalny i maksymalny rok produkcji pojazdu za pomocą dwóch dropdown lub range slider.
+
+Kryteria akceptacji:
+
+- Dwa selecty: "Rok od" i "Rok do" lub range slider
+- Lista lat od najstarszego do najnowszego dostępnego w bazie
+- "Rok do" nie może być wcześniejszy niż "Rok od"
+- Wyniki filtrują się według zakresu lat (włącznie)
+- URL aktualizuje się: ?rok_od=2015&rok_do=2020
+- Możliwość pozostawienia pustych (bez ograniczenia roku)
+- Walidacja: komunikat błędu jeśli "do < od"
+
+### US-005: Filtrowanie Według Typu Aukcji
+
+Tytuł: Jako użytkownik chcę wybrać czy szukam pojazdu z Copart czy IAAI
+
+Opis:
+Użytkownik może wybrać typ aukcji (Copart, IAAI lub oba) za pomocą checkboxów lub radio buttons.
+
+Kryteria akceptacji:
+
+- Checkboxy dla Copart i IAAI (możliwość wyboru obu)
+- Domyślnie oba zaznaczone (pokazuje wszystkie)
+- Po wyborze tylko jednego typ aukcji, wyniki filtrują się
+- URL aktualizuje się: ?aukcja=copart lub ?aukcja=copart,iaai
+- Loading state podczas aktualizacji wyników
+- Licznik pokazuje ile pojazdów dla każdego typu
+
+### US-006: Wyszukiwanie Według VIN
+
+Tytuł: Jako użytkownik chcę wpisać VIN i znaleźć konkretny pojazd
+
+Opis:
+Użytkownik wpisuje numer VIN w dedykowane pole wyszukiwania i jest przekierowany bezpośrednio na stronę szczegółów tego pojazdu.
+
+Kryteria akceptacji:
+
+- Widoczne pole tekstowe "Szukaj po VIN"
+- Przycisk "Szukaj" lub wyszukiwanie po Enter
+- Po wpisaniu VIN i kliknięciu szukaj:
+  - Jeśli pojazd istnieje: przekierowanie na /znajdz-auto/[id]
+  - Jeśli nie istnieje: komunikat "Nie znaleziono pojazdu o tym VIN"
+- Walidacja formatu VIN (17 znaków alfanumerycznych)
+- Loading indicator podczas wyszukiwania
+- Case insensitive (duże/małe litery bez znaczenia)
+- Trimowanie białych znaków
+
+### US-007: Resetowanie Filtrów
+
+Tytuł: Jako użytkownik chcę wyczyścić wszystkie filtry jednym kliknięciem
+
+Opis:
+Użytkownik klika przycisk "Wyczyść filtry" i wszystkie filtry resetują się do wartości domyślnych.
+
+Kryteria akceptacji:
+
+- Przycisk "Wyczyść filtry" widoczny w panelu filtrów
+- Po kliknięciu wszystkie filtry resetują się
+- Wyniki pokazują najnowsze pojazdy (jak przy pierwszym wejściu)
+- URL resetuje się do /znajdz-auto (bez query params)
+- Loading state podczas ładowania wyników
+- Przycisk nieaktywny jeśli żadne filtry nie są ustawione
+
+### US-008: Paginacja Wyników
+
+Tytuł: Jako użytkownik chcę przeglądać kolejne strony wyników
+
+Opis:
+Użytkownik widzi paginację pod listą wyników i może przechodzić między stronami.
+
+Kryteria akceptacji:
+
+- Nawigacja paginacji pod listą wyników
+- Przyciski: Poprzednia, 1, 2, 3, ..., Następna
+- Aktualna strona wyróżniona wizualnie
+- Przycisk "Poprzednia" nieaktywny na stronie 1
+- Przycisk "Następna" nieaktywny na ostatniej stronie
+- Kliknięcie strony ładuje wyniki dla tej strony
+- URL aktualizuje się: ?strona=2
+- Scroll na górę listy po zmianie strony
+- Loading state podczas ładowania nowej strony
+- Zachowanie filtrów między stronami
+
+### US-009: Wyświetlanie Liczby Wyników
+
+Tytuł: Jako użytkownik chcę wiedzieć ile pojazdów spełnia moje kryteria
+
+Opis:
+Użytkownik widzi licznik pokazujący ile pojazdów spełnia wybrane filtry.
+
+Kryteria akceptacji:
+
+- Tekst "Znaleziono X pojazdów" nad listą wyników
+- Liczba aktualizuje się po każdej zmianie filtrów
+- Jeśli brak wyników: "Nie znaleziono pojazdów"
+- Format z separatorem tysięcy: "Znaleziono 1 234 pojazdów"
+- Poprawna odmiana: pojazd/pojazdy/pojazdów
+
+### US-010: Wyświetlanie Komunikatu Braku Wyników
+
+Tytuł: Jako użytkownik chcę zobaczyć pomocny komunikat gdy brak wyników
+
+Opis:
+Gdy wybrane filtry nie zwracają żadnych wyników, użytkownik widzi przyjazny komunikat z sugestiami.
+
+Kryteria akceptacji:
+
+- Komunikat "Nie znaleziono pojazdów spełniających kryteria"
+- Sugestie: "Spróbuj zmienić filtry" lub "Wyczyść filtry"
+- Przycisk "Wyczyść filtry"
+- Opcjonalnie: sugestie podobnych wyszukiwań
+- Brak wyświetlania pustej listy ani błędu
+- Komunikat stylizowany zgodnie z designem
+
+### US-011: Kliknięcie na Kafelek Pojazdu
+
+Tytuł: Jako użytkownik chcę kliknąć na pojazd aby zobaczyć jego szczegóły
+
+Opis:
+Użytkownik klika na kafelek pojazdu na liście wyników i jest przekierowany na stronę szczegółów.
+
+Kryteria akceptacji:
+
+- Cały kafelek klikalny (nie tylko zdjęcie)
+- Hover effect pokazuje że kafelek jest klikalny (zmiana tła, shadow)
+- Kliknięcie przekierowuje na /znajdz-auto/[id]
+- Otwarcie w tej samej karcie (nie new tab)
+- Smooth transition bez opóźnień
+- Zachowanie scroll position po powrocie (back button)
+
+### US-012: Wyświetlanie Podstawowych Info na Kafelku
+
+Tytuł: Jako użytkownik chcę zobaczyć kluczowe informacje o pojeździe na kafelku
+
+Opis:
+Kafelek pojazdu na liście wyników wyświetla podstawowe informacje pomocne w ocenie pojazdu.
+
+Kryteria akceptacji:
+
+- Zdjęcie główne pojazdu (pierwsze z zdjecia_json lub imagelinksbid)
+- Model i rok produkcji (z title)
+- Cena (z cena, sformatowana z separatorem)
+- Typ aukcji / seller (Copart lub IAAI)
+- Przycisk "Skontaktuj się"
+- Opcjonalnie: przebieg, status
+- Placeholder image jeśli brak zdjęcia
+- Image lazy loading dla wydajności
+- Responsywny layout (dostosowanie do mobile/desktop)
+
+### US-013: Udostępnianie Wyszukiwania przez URL
+
+Tytuł: Jako użytkownik chcę skopiować link z moimi filtrami i udostępnić go
+
+Opis:
+Użytkownik ustawia filtry, kopiuje URL z przeglądarki i może go wysłać innej osobie lub zapisać. Każdy kto otworzy ten link zobaczy te same wyfiltrowane wyniki.
+
+Kryteria akceptacji:
+
+- URL zawiera wszystkie parametry filtrów jako query params
+- Format: /znajdz-auto?marka=Toyota&model=Camry&rok_od=2015&rok_do=2020&aukcja=copart&strona=1
+- Otwarcie linka ustawia filtry automatycznie
+- Wyniki odpowiadają ustawionym filtrom
+- Działa z zakładkami przeglądarki
+- Działa z historią przeglądarki (back/forward)
+- Sharing przez social media pokazuje preview (Open Graph)
+
+### US-014: Przeglądanie Szczegółów Pojazdu
+
+Tytuł: Jako użytkownik chcę zobaczyć pełne informacje o pojeździe
+
+Opis:
+Użytkownik znajduje się na stronie szczegółów pojazdu i widzi wszystkie dostępne informacje.
+
+Kryteria akceptacji:
+
+- Sekcja podstawowych informacji:
+  - Model, rok (duży, wyróżniony)
+  - VIN
+  - Cena (duża, wyróżniona)
+  - Typ aukcji / seller
+  - Link do aukcji (przycisk "Zobacz aukcję")
+- Sekcja specyfikacji (z specs JSON):
+  - Numer aukcyjny
+  - Przebieg (mile i km)
+  - Dokument (title status)
+  - Uszkodzenie (damage type)
+  - Status pojazdu
+  - Sprzedający
+- Galeria zdjęć (patrz US-015)
+- Przycisk "Skontaktuj się" (sticky lub w widocznym miejscu)
+- Responsywny layout
+- SEO: tytuł strony zawiera model i rok
+
+### US-015: Przeglądanie Galerii Zdjęć
+
+Tytuł: Jako użytkownik chcę zobaczyć wszystkie zdjęcia pojazdu w pełnym rozmiarze
+
+Opis:
+Użytkownik klika na zdjęcie w galerii i otwiera się lightbox z możliwością przeglądania wszystkich zdjęć.
+
+Kryteria akceptacji:
+
+- Miniaturki wszystkich zdjęć (z zdjecia_json i imagelinksbid)
+- Kliknięcie na miniaturkę otwiera lightbox
+- Lightbox pokazuje zdjęcie w pełnym rozmiarze
+- Nawigacja strzałkami: poprzednie/następne zdjęcie
+- Nawigacja klawiszami: strzałki, ESC (zamknięcie)
+- Funkcja zoom (kliknięcie lub scroll)
+- Licznik: "3 / 15" (aktualne/wszystkie)
+- Przycisk zamknięcia (X)
+- Swipe gestures na mobile
+- Placeholder jeśli brak zdjęć: "Brak zdjęć dla tego pojazdu"
+- Lazy loading dla wydajności
+
+### US-016: Otwarcie Linku do Aukcji Zewnętrznej
+
+Tytuł: Jako użytkownik chcę otworzyć link do aukcji Copart/IAAI
+
+Opis:
+Użytkownik klika przycisk "Zobacz aukcję" na stronie szczegółów i otwiera się strona aukcji w nowej karcie.
+
+Kryteria akceptacji:
+
+- Przycisk "Zobacz aukcję" na stronie szczegółów
+- Kliknięcie otwiera link w nowej karcie (target="\_blank")
+- Dodane rel="noopener noreferrer" dla bezpieczeństwa
+- Link prowadzi do pola link z bazy danych
+- Jeśli brak linku: przycisk nieaktywny lub ukryty
+- Tooltip/hint: "Otwiera w nowej karcie"
+
+### US-017: Otwarcie Formularza Kontaktowego z Kafelka
+
+Tytuł: Jako użytkownik chcę skontaktować się bezpośrednio z listy wyników
+
+Opis:
+Użytkownik klika przycisk "Skontaktuj się" na kafelku pojazdu i otwiera się modal z formularzem.
+
+Kryteria akceptacji:
+
+- Przycisk "Skontaktuj się" widoczny na każdym kafelku
+- Kliknięcie otwiera modal/overlay z formularzem
+- VIN pojazdu automatycznie dołączony do formularza (ukryte pole)
+- Modal nakłada się na stronę (backdrop/overlay)
+- Możliwość zamknięcia: przycisk X, kliknięcie poza modal, ESC
+- Scroll blokowany pod modalem
+- Focus trap w modalu (tab navigation)
+- Formularz zgodny z US-020
+
+### US-018: Otwarcie Formularza Kontaktowego ze Strony Szczegółów
+
+Tytuł: Jako użytkownik chcę skontaktować się ze strony szczegółów pojazdu
+
+Opis:
+Użytkownik klika przycisk "Skontaktuj się" na stronie szczegółów pojazdu i otwiera się modal z formularzem.
+
+Kryteria akceptacji:
+
+- Przycisk "Skontaktuj się" widoczny na stronie szczegółów
+- Opcjonalnie: sticky button (zawsze widoczny podczas scrollu)
+- Kliknięcie otwiera modal z formularzem
+- VIN i link do pojazdu automatycznie dołączone
+- Modal, zamknięcie, focus trap jak w US-017
+- Formularz zgodny z US-020
+
+### US-019: Wypełnianie Formularza Kontaktowego
+
+Tytuł: Jako użytkownik chcę wypełnić formularz kontaktowy
+
+Opis:
+Użytkownik wypełnia pola formularza kontaktowego swoimi danymi.
+
+Kryteria akceptacji:
+
+- Pola formularza:
+  - Imię (input text, wymagane)
+  - Email (input email, wymagane)
+  - Telefon (input tel, wymagane)
+  - Komentarz (textarea, opcjonalne, max 500 znaków)
+  - Checkbox zgody RODO (wymagany)
+- Labels dla wszystkich pól (accessibility)
+- Placeholder text dla każdego pola
+- Walidacja w czasie rzeczywistym (po blur):
+  - Imię: min 2 znaki
+  - Email: poprawny format email
+  - Telefon: format polski lub międzynarodowy
+  - RODO: musi być zaznaczone
+- Komunikaty błędów pod polami (czerwone)
+- Licznik znaków dla komentarza
+- Link do polityki prywatności przy checkboxie RODO
+- Autofocus na pierwszym polu po otwarciu modalu
+
+### US-020: Wysłanie Formularza Kontaktowego
+
+Tytuł: Jako użytkownik chcę wysłać formularz i otrzymać potwierdzenie
+
+Opis:
+Użytkownik wypełnia wszystkie wymagane pola i wysyła formularz. System wysyła email do zespołu TOPCAR i potwierdzenie do użytkownika.
+
+Kryteria akceptacji:
+
+- Przycisk "Wyślij" aktywny gdy wszystkie wymagane pola wypełnione
+- Kliknięcie "Wyślij":
+  - Loading state na przycisku ("Wysyłanie...")
+  - Przycisk nieaktywny podczas wysyłania
+  - Walidacja server-side
+- Po sukcesie:
+  - Komunikat: "Dziękujemy! Wkrótce się z Tobą skontaktujemy"
+  - Email wysłany do zespołu TOPCAR (z danymi użytkownika i VIN)
+  - Email potwierdzający wysłany do użytkownika
+  - Modal zamyka się automatycznie po 3 sekundach lub na kliknięcie
+- Po błędzie:
+  - Komunikat błędu: "Coś poszło nie tak. Spróbuj ponownie."
+  - Możliwość ponownego wysłania
+  - Dane w formularzu zachowane
+- Czas odpowiedzi < 5 sekund
+- Analytics: tracking wysłanych formularzy (jeśli będzie analytics)
+
+### US-021: Otrzymanie Emaila przez Zespół TOPCAR
+
+Tytuł: Jako zespół TOPCAR chcę otrzymać email ze szczegółami zgłoszenia
+
+Opis:
+Zespół TOPCAR otrzymuje email z pełnymi informacjami o zgłoszeniu użytkownika.
+
+Kryteria akceptacji:
+
+- Email wysłany na adres z zmiennej środowiskowej
+- Subject: "Nowe zgłoszenie - [Marka Model Rok]" lub "Nowe zgłoszenie - VIN [VIN]"
+- Treść emaila zawiera:
+  - Dane użytkownika: imię, email, telefon
+  - Komentarz użytkownika (jeśli dodany)
+  - Informacje o pojeździe: VIN, model, rok, cena
+  - Link do strony szczegółów pojazdu w systemie
+  - Link do aukcji zewnętrznej
+  - Timestamp zgłoszenia
+- Czytelny HTML template (responsywny)
+- Możliwość bezpośredniej odpowiedzi na email użytkownika (reply-to)
+- Email dostarczony w < 1 minucie
+
+### US-022: Otrzymanie Emaila Potwierdzającego przez Użytkownika
+
+Tytuł: Jako użytkownik chcę otrzymać email potwierdzający zgłoszenie
+
+Opis:
+Użytkownik otrzymuje email potwierdzający że zgłoszenie zostało wysłane i zespół się z nim skontaktuje.
+
+Kryteria akceptacji:
+
+- Email wysłany na adres podany przez użytkownika
+- Subject: "Potwierdzenie zgłoszenia - TOPCAR"
+- Treść emaila zawiera:
+  - Podziękowanie za zainteresowanie
+  - Potwierdzenie że zespół się skontaktuje (w ciągu X godzin)
+  - Podstawowe informacje o pojeździe (model, rok, VIN)
+  - Link do strony szczegółów pojazdu
+  - Kontakt do TOPCAR (telefon, email)
+- Czytelny HTML template
+- Branding TOPCAR (logo, kolory)
+- Email dostarczony w < 1 minucie
+
+### US-023: Rate Limiting Formularza
+
+Tytuł: Jako system chcę zapobiec spamowaniu formularza kontaktowego
+
+Opis:
+System ogranicza liczbę zgłoszeń z jednego adresu IP aby zapobiec spamowi i nadużyciom.
+
+Kryteria akceptacji:
+
+- Limit: maksymalnie 5 zgłoszeń na godzinę z jednego IP
+- Po przekroczeniu limitu:
+  - Formularz pokazuje komunikat: "Osiągnięto limit zgłoszeń. Spróbuj ponownie za [X] minut."
+  - Przycisk "Wyślij" nieaktywny
+  - Pozostałe pola edytowalne (użytkownik może przygotować zgłoszenie)
+- Licznik resetuje się po godzinie
+- Rate limit sprawdzany przed wysłaniem emaili
+- HTTP status 429 (Too Many Requests)
+- Logowanie prób przekroczenia limitu
+
+### US-024: Obsługa Błędu Wysłania Emaila
+
+Tytuł: Jako użytkownik chcę wiedzieć jeśli email nie został wysłany
+
+Opis:
+Jeśli wysyłka emaila się nie powiedzie (Resend API error), użytkownik widzi komunikat błędu.
+
+Kryteria akceptacji:
+
+- Komunikat błędu: "Nie udało się wysłać zgłoszenia. Spróbuj ponownie lub skontaktuj się z nami: [telefon/email]"
+- Możliwość ponownego wysłania (przycisk aktywny)
+- Dane w formularzu zachowane
+- Logowanie błędu do error tracking (Sentry)
+- Fallback: wyświetlenie bezpośredniego kontaktu (telefon, email TOPCAR)
+- Retry mechanism: 2 próby automatyczne przed pokazaniem błędu
+
+### US-025: Wyświetlanie Loading States
+
+Tytuł: Jako użytkownik chcę widzieć że system pracuje podczas ładowania
+
+Opis:
+Użytkownik widzi odpowiednie loading indicators podczas ładowania danych lub wysyłania formularza.
+
+Kryteria akceptacji:
+
+- Skeleton screens podczas ładowania listy wyników:
+  - Placeholder kafelki z animacją
+  - Liczba placeholders = oczekiwana liczba wyników na stronę
+- Spinner podczas:
+  - Aktualizacji filtrów
+  - Wyszukiwania po VIN
+  - Wysyłania formularza
+- Progress bar jeśli ładowanie trwa > 2 sekundy
+- Loading text: "Ładowanie...", "Wysyłanie...", "Wyszukiwanie..."
+- Komponenty nieinteraktywne podczas ładowania (disabled state)
+- Brak layoutu shifts (CLS = 0)
+
+### US-026: Responsywność na Mobile
+
+Tytuł: Jako użytkownik mobile chcę komfortowo korzystać z wyszukiwarki
+
+Opis:
+Aplikacja działa płynnie i wygodnie na urządzeniach mobilnych.
+
+Kryteria akceptacji:
+
+- Layout dostosowany do małych ekranów (320px - 767px)
+- Filtry:
+  - Drawer wysuwany z boku lub dołu, lub
+  - Accordion składany/rozwijany
+  - Przycisk "Filtry" otwierający panel
+- Kafelki pojazdów:
+  - 1 kolumna na mobile
+  - Zachowanie proporcji zdjęć
+  - Touch-friendly przyciski (min 44x44px)
+- Formularz kontaktowy:
+  - Pełnoekranowy modal lub pełna szerokość
+  - Keyboard nie zasłania pól (viewport handling)
+- Galeria:
+  - Swipe gestures między zdjęciami
+  - Pinch to zoom
+- Navigation:
+  - Hamburger menu (jeśli własna nawigacja)
+  - Sticky header
+- Performance:
+  - First Contentful Paint < 2s na 3G
+  - Touch response < 100ms
+- Testing na: iPhone (Safari), Android (Chrome)
+
+### US-027: Responsywność na Desktop
+
+Tytuł: Jako użytkownik desktop chcę efektywnie korzystać z dużego ekranu
+
+Opis:
+Aplikacja wykorzystuje przestrzeń dużego ekranu dla lepszej użyteczności.
+
+Kryteria akceptacji:
+
+- Layout dla ekranów > 768px:
+  - Filtry: sidebar z lewej strony (zawsze widoczny) lub top bar
+  - Lista wyników: 2-4 kolumny kafelków (w zależności od szerokości)
+  - Maximum width: 1400px (container)
+- Hover states:
+  - Kafelki pojazdów
+  - Przyciski
+  - Linki
+- Keyboard navigation:
+  - Tab między elementami
+  - Enter/Space dla akcji
+  - ESC dla zamknięcia modali
+- Formularz kontaktowy:
+  - Modal wycentrowany (max 600px szerokości)
+  - Backdrop z blur effect
+- Galeria:
+  - Lightbox pełnoekranowy
+  - Klawisze strzałek dla nawigacji
+- Sticky filtry podczas scrollu (opcjonalnie)
+- Testing na: Chrome, Firefox, Safari, Edge
+
+### US-028: Obsługa Brakujących Zdjęć
+
+Tytuł: Jako użytkownik chcę zobaczyć placeholder jeśli pojazd nie ma zdjęć
+
+Opis:
+Jeśli pojazd nie ma zdjęć w bazie, wyświetlany jest estetyczny placeholder.
+
+Kryteria akceptacji:
+
+- Placeholder image dla pojazdów bez zdjęć:
+  - Generyczny obrazek samochodu lub logo TOPCAR
+  - Tekst: "Brak zdjęcia"
+  - Zachowane proporcje jak normalne zdjęcia
+- Na kafelku: placeholder zamiast zdjęcia głównego
+- Na stronie szczegółów:
+  - Placeholder w galerii
+  - Informacja: "Zdjęcia niedostępne dla tego pojazdu"
+- Brak broken image icons
+- Brak console errors dla brakujących obrazków
+
+### US-029: Obsługa Błędu Połączenia z Supabase
+
+Tytuł: Jako użytkownik chcę zobaczyć komunikat jeśli dane nie mogą być załadowane
+
+Opis:
+Jeśli połączenie z Supabase nie działa lub zwraca błąd, użytkownik widzi komunikat.
+
+Kryteria akceptacji:
+
+- Komunikat błędu: "Nie można załadować danych. Spróbuj ponownie za chwilę."
+- Przycisk "Odśwież" dla ponownego załadowania
+- Brak pustej strony / białego ekranu
+- Error boundary łapie błędy renderowania
+- Logowanie błędu do error tracking (Sentry)
+- HTTP status errors obsługiwane (500, 503, timeout)
+- Retry mechanism: 2 automatyczne próby przed pokazaniem błędu
+- Fallback: kontakt do TOPCAR jeśli problem trwa
+
+### US-030: SEO - Indeksowanie Stron Szczegółów
+
+Tytuł: Jako właściciel strony chcę aby strony pojazdów były indeksowane przez Google
+
+Opis:
+Strony szczegółów pojazdów mają odpowiednie meta tagi i są renderowane server-side dla lepszego SEO.
+
+Kryteria akceptacji:
+
+- Server-side rendering (SSR) dla /znajdz-auto/[id]
+- Meta tagi dla każdej strony szczegółów:
+  - title: "[Rok] [Marka] [Model] - TOPCAR Wyszukiwarka"
+  - description: krótki opis pojazdu (z specs)
+  - canonical URL
+- Open Graph tags:
+  - og:title
+  - og:description
+  - og:image (zdjęcie główne pojazdu)
+  - og:url
+  - og:type: "product"
+- Twitter Card tags
+- Structured data (JSON-LD):
+  - Schema.org Product
+  - name, image, description, offers (price)
+- Sitemap.xml zawiera linki do stron pojazdów
+  - Chunked dla dużej liczby URL (wiele plików po 50k URLs)
+- Robots.txt zezwala na indeksowanie /znajdz-auto/\*
+- Alt text dla wszystkich obrazków
+
+### US-031: Accessibility - WCAG 2.1 AA
+
+Tytuł: Jako użytkownik z niepełnosprawnościami chcę móc korzystać z aplikacji
+
+Opis:
+Aplikacja spełnia standardy dostępności WCAG 2.1 poziom AA.
+
+Kryteria akceptacji:
+
+- Semantyczny HTML (header, nav, main, article, footer)
+- Keyboard navigation:
+  - Tab/Shift+Tab między interaktywnymi elementami
+  - Enter/Space dla akcji
+  - ESC dla zamknięcia modali
+  - Widoczny focus indicator
+- ARIA labels:
+  - aria-label dla ikon bez tekstu
+  - aria-labelledby dla sekcji
+  - aria-describedby dla dodatkowych opisów
+  - aria-live dla dynamicznych komunikatów
+- Contrast ratio:
+  - Text: min 4.5:1
+  - Large text (18px+): min 3:1
+  - Interactive elements: min 3:1
+- Forms:
+  - Labels połączone z inputs (for/id)
+  - Error messages powiązane z polami
+  - Required fields oznaczone
+- Images:
+  - Alt text dla wszystkich znaczących obrazków
+  - Decorative images: alt=""
+- Skip link ("Przejdź do treści")
+- Screen reader testing (NVDA/JAWS)
+- Lighthouse Accessibility score > 80
+
+### US-032: Performance - Core Web Vitals
+
+Tytuł: Jako użytkownik chcę aby strona ładowała się szybko
+
+Opis:
+Aplikacja spełnia standardy wydajności Core Web Vitals.
+
+Kryteria akceptacji:
+
+- Largest Contentful Paint (LCP) < 2.5s
+- First Input Delay (FID) < 100ms / Interaction to Next Paint (INP) < 200ms
+- Cumulative Layout Shift (CLS) < 0.1
+- First Contentful Paint (FCP) < 1.8s
+- Time to Interactive (TTI) < 5s
+- Total Blocking Time (TBT) < 300ms
+- Optymalizacje:
+  - Image optimization (WebP, lazy loading)
+  - Code splitting (dynamic imports)
+  - CSS/JS minification
+  - Gzip/Brotli compression
+  - CDN dla statycznych assets
+  - Cache headers
+  - Preload critical resources
+  - Defer non-critical JS
+- Lighthouse Performance score > 80
+- Testing na:
+  - Desktop: Fast 3G, Regular 3G
+  - Mobile: Slow 3G
+
+### US-033: Cache Popularnych Zapytań
+
+Tytuł: Jako system chcę cache'ować popularne zapytania dla wydajności
+
+Opis:
+Często wykonywane zapytania są cache'owane aby zmniejszyć obciążenie bazy i przyspieszyć odpowiedzi.
+
+Kryteria akceptacji:
+
+- Cache dla:
+  - Lista najnowszych pojazdów (strona 1 bez filtrów)
+  - Lista marek (dla dropdown)
+  - Popularne kombinacje filtrów
+  - Strony szczegółów pojazdów
+- Cache mechanism:
+  - Next.js cache (unstable_cache) lub
+  - Redis (jeśli dostępny)
+- TTL (Time To Live):
+  - Lista najnowszych: 5 minut
+  - Lista marek: 1 godzina
+  - Szczegóły pojazdu: 30 minut
+- Cache invalidation:
+  - Automatyczne po TTL
+  - Manual: revalidatePath/revalidateTag
+- Cache headers:
+  - s-maxage dla CDN
+  - stale-while-revalidate
+- Monitoring hit rate cache (jeśli analytics)
+
+### US-034: Parsowanie Title z Edge Cases
+
+Tytuł: Jako system chcę poprawnie parsować title nawet gdy format jest nietypowy
+
+Opis:
+System radzi sobie z różnymi formatami pola title i edge cases.
+
+Kryteria akceptacji:
+
+- Standardowy format: "2005 Toyota Camry, LE"
+  - Rok: 2005
+  - Marka: Toyota
+  - Model: Camry LE
+- Edge cases:
+  - Brakujący rok: "Toyota Camry" -> rok: null
+  - Brakujący model: "2005 Toyota" -> model: null
+  - Extra spacje: "2005 Toyota Camry" -> poprawnie sparsowane
+  - Liczby w modelu: "2005 BMW 320i" -> BMW 320i
+  - Specjalne znaki: "2005 Mercedes-Benz E-Class" -> poprawnie
+- Fallback:
+  - Jeśli parsowanie się nie powiedzie: wyświetl cały title as-is
+  - Nie crashuj aplikacji
+- Logowanie problematycznych formatów dla analizy
+- Case insensitive dla marek (Toyota = TOYOTA = toyota)
+
+### US-035: Zgodność z RODO
+
+Tytuł: Jako właściciel strony chcę być zgodny z przepisami RODO
+
+Opis:
+Aplikacja spełnia wymagania RODO dotyczące przetwarzania danych osobowych.
+
+Kryteria akceptacji:
+
+- Polityka prywatności:
+  - Strona /polityka-prywatnosci
+  - Link w stopce i w formularzu
+  - Zawiera: kto przetwarza dane, w jakim celu, jak długo, prawa użytkownika
+- Formularz kontaktowy:
+  - Checkbox zgody RODO (wymagany)
+  - Tekst zgody: "Wyrażam zgodę na przetwarzanie moich danych osobowych..."
+  - Link do polityki przy checkboxie
+- Dane osobowe:
+  - Przechowywane tylko w emailach (nie w bazie w MVP)
+  - Wysyłane przez szyfrowane połączenie (HTTPS)
+  - Brak logowania danych osobowych w plain text
+- Brak cookies marketingowych (w MVP)
+- Brak Google Analytics (w MVP) - jeśli dodane, wymaga consent banner
+- Prawo do usunięcia danych: kontakt email w polityce
+
+### US-036: Error Tracking i Monitoring
+
+Tytuł: Jako developer chcę wiedzieć o błędach w produkcji
+
+Opis:
+System automatycznie raportuje błędy i exceptions do narzędzia error tracking.
+
+Kryteria akceptacji:
+
+- Integracja z Sentry lub podobnym narzędziem (opcjonalne w MVP)
+- Logowanie:
+  - JavaScript errors (client-side)
+  - API errors (server-side)
+  - Nieobsłużone promise rejections
+  - Network errors
+- Context w raportach:
+  - User agent
+  - URL
+  - User ID (jeśli będzie logowanie)
+  - Breadcrumbs (akcje użytkownika przed błędem)
+- Filtry:
+  - Nie loguj wrażliwych danych (hasła, tokeny)
+  - Rate limiting dla powtarzających się błędów
+- Notifications:
+  - Email/Slack dla critical errors
+  - Dashboard z statystykami
+- Source maps dla stack traces
+
+## 6. Metryki Sukcesu
+
+### 6.1 Metryki Funkcjonalności Wyszukiwarki
+
+Cel: Wyszukiwarka działa szybko i zwraca prawidłowe wyniki.
+
+Metryki:
+
+- Czas zwracania wyników < 3 sekundy dla 95% zapytań
+- 100% zgodność wyników z wybranymi filtrami (weryfikacja manualna na sample)
+- 0% crashed queries (wszystkie zapytania kończą się sukcesem lub przyjaznym błędem)
+- Uptime > 99% (monitoring przez Vercel/UptimeRobot)
+
+Metoda pomiaru:
+
+- Performance monitoring w produkcji (Vercel Analytics)
+- Manual testing z różnymi kombinacjami filtrów
+- Sample data verification (losowe sprawdzanie 50 wyników)
+- Monitoring dostępności
+
+Target MVP:
+
+- 95% zapytań < 3s: TAK
+- 100% zgodność filtrów: TAK (manual QA)
+- 0% crashed queries: TAK
+- Uptime > 99%: TAK
+
+### 6.2 Metryki Generowania Leadów
+
+Cel: System skutecznie generuje leady - użytkownicy wysyłają zgłoszenia, zespół otrzymuje pełne informacje.
+
+Metryki:
+
+- 100% wysłanych formularzy dociera do zespołu TOPCAR
+- 100% zgłoszeń zawiera pełne dane (VIN, kontakt, timestamp)
+- Czas potwierdzenia dla użytkownika < 5 sekund dla 95% zgłoszeń
+- Współczynnik konwersji: % użytkowników którzy wysłali formularz z tych którzy go otworzyli (tracking)
+- Liczba leadów tygodniowo (monitoring)
+
+Metoda pomiaru:
+
+- Monitoring emaili przez pierwsze 2 tygodnie
+- Weryfikacja z zespołem TOPCAR (otrzymują wszystko?)
+- Tracking czasu odpowiedzi formularza
+- Event tracking dla otwarcia/wysłania formularza (jeśli analytics)
+- Tygodniowy raport z liczby leadów
+
+Target MVP:
+
+- 100% dostarczone: TAK (weryfikacja przez 2 tygodnie)
+- Pełne dane: TAK (manual check)
+- < 5s response: 95%+ TAK
+- Liczba leadów > 0 w pierwszym tygodniu: TAK (główny KPI MVP)
+
+### 6.3 Metryki Użyteczności Interfejsu
+
+Cel: Użytkownicy potrafią korzystać z aplikacji intuicyjnie bez instrukcji.
+
+Metryki:
+
+- Testy użyteczności: 4/5 osób z grupy docelowej wykonuje zadanie bez problemów
+- Task success rate: % użytkowników którzy pomyślnie znaleźli i wysłali formularz
+- Time on task: średni czas do znalezienia pojazdu i wysłania formularza
+- Error rate: % użytkowników którzy napotykają błędy/problemy
+- User satisfaction: ocena satysfakcji (survey po 2 tygodniach - opcjonalne)
+
+Metoda pomiaru:
+
+- Usability testing z 3-5 osobami przed wdrożeniem
+  - Zadanie: "Znajdź Toyotę Camry 2015-2020 i wyślij zgłoszenie"
+  - Obserwacja i notatki
+- Hotjar/session recording (jeśli będzie w przyszłości)
+- Google Analytics behavior flow (jeśli będzie)
+- Survey link w email potwierdzającym (opcjonalne)
+
+Target MVP:
+
+- 4/5 wykonuje zadanie: TAK (pre-launch testing)
+- Task success rate > 80%: TAK (cel)
+- Brak critical UX issues: TAK (pre-launch testing)
+
+### 6.4 Metryki Wydajności Technicznej
+
+Cel: Aplikacja działa sprawnie na desktop i mobile z dobrą wydajnością.
+
+Metryki:
+
+- Lighthouse Performance score > 80 (desktop i mobile)
+- Lighthouse Accessibility score > 80
+- Core Web Vitals:
+  - LCP < 2.5s
+  - FID/INP < 200ms
+  - CLS < 0.1
+- Brak console errors w produkcji
+- Cross-browser compatibility: działa na Chrome, Firefox, Safari, Edge
+- Cross-device: działa na iOS (Safari) i Android (Chrome)
+
+Metoda pomiaru:
+
+- Lighthouse audits przed deploymentem (CI/CD)
+- Real user monitoring (RUM) przez Vercel Analytics
+- Manual testing na urządzeniach:
+  - Desktop: Chrome, Firefox, Safari, Edge
+  - Mobile: iPhone (Safari), Android (Chrome)
+- Console monitoring w produkcji
+
+Target MVP:
+
+- Lighthouse Performance > 80: TAK (desktop), > 60 (mobile OK dla MVP)
+- Lighthouse Accessibility > 80: TAK
+- Core Web Vitals: pass (green)
+- Brak critical errors: TAK
+- Cross-browser/device: TAK (manual testing)
+
+### 6.5 Metryki SEO i Dostępności
+
+Cel: Strony szczegółów pojazdów są indeksowane przez Google i dostępne.
+
+Metryki:
+
+- Indexed pages w Google Search Console po 2 tygodniach > 100
+- Organic search impressions > 0 po 2 tygodniach
+- Poprawne meta tagi (title, description) dla 100% stron szczegółów
+- Structured data validation: 0 errors w Rich Results Test
+- Mobile-friendly test: pass dla wszystkich stron
+- Accessibility: WCAG 2.1 AA compliance
+
+Metoda pomiaru:
+
+- Google Search Console monitoring po wdrożeniu
+- Manual inspection meta tags (sample)
+- Google Rich Results Test dla structured data
+- Google Mobile-Friendly Test
+- Manual accessibility audit (checklist)
+- Screen reader testing (NVDA/JAWS) - sample pages
+
+Target MVP:
+
+- Indexed pages > 100 po 2 tyg: cel (monitoring)
+- Meta tagi: 100% poprawne (manual QA)
+- Structured data: 0 errors (validation)
+- Mobile-friendly: pass (validation)
+- Accessibility: podstawowa zgodność (checklist)
+
+### 6.6 Główny Wskaźnik Sukcesu MVP
+
+KPI (Key Performance Indicator) dla MVP:
+
+Liczba poprawnie dostarczonych leadów w pierwszym tygodniu > 0
+
+Definicja sukcesu:
+
+- Co najmniej 1 użytkownik wysłał formularz kontaktowy
+- Zespół TOPCAR otrzymał email z pełnymi danymi
+- Użytkownik otrzymał email potwierdzający
+- Cały flow działa end-to-end bez błędów
+
+To jest główna walidacja MVP - jeśli users mogą znaleźć pojazd i skontaktować się, aplikacja spełnia podstawowy cel.
+
+### 6.7 Metryki Dodatkowe (Nice to Have)
+
+Metryki dla przyszłych iteracji (poza MVP):
+
+- Liczba unique visitors
+- Bounce rate
+- Średni czas sesji
+- Najczęściej wyszukiwane marki/modele
+- Conversion rate (% visitors którzy wysłali formularz)
+- Źródła ruchu (organic, direct, referral)
+- Device breakdown (desktop vs mobile)
+- Geographic distribution użytkowników
+
+Narzędzia (do dodania po MVP):
+
+- Google Analytics 4
+- Hotjar (heatmaps, session recording)
+- Google Search Console
+- Vercel Analytics
+
+### 6.8 Timeline Pomiaru
+
+Fazy monitorowania:
+
+Pre-launch (przed wdrożeniem):
+
+- Lighthouse audits
+- Manual testing (QA checklist)
+- Usability testing z 3-5 osobami
+- Cross-browser/device testing
+- Accessibility audit
+
+Tydzień 1 (po wdrożeniu):
+
+- Monitoring leadów (każdy sprawdzany manualnie)
+- Error tracking (Sentry logs)
+- Performance monitoring (Vercel)
+- User feedback (jeśli będą zgłoszenia)
+
+Tydzień 2:
+
+- Kontynuacja monitoringu leadów
+- Google Search Console (pierwsze dane)
+- Analiza problemów z tygodnia 1
+- Gathering feedback od zespołu TOPCAR
+
+Po 2 tygodniach:
+
+- Raport z metryk
+- Lista bugów/issues do naprawy
+- Priorytetyzacja ulepszeń
+- Decyzja o iteracji 2
+
+### 6.9 Kryteria Akceptacji MVP
+
+MVP jest gotowe do wdrożenia gdy:
+
+- Wszystkie user stories (US-001 do US-036) są zaimplementowane i przetestowane
+- Lighthouse Performance > 80 (desktop), > 60 (mobile)
+- Lighthouse Accessibility > 80
+- 0 critical bugs
+- Cross-browser testing passed (Chrome, Firefox, Safari, Edge)
+- Cross-device testing passed (iOS, Android)
+- Manual QA checklist completed (100%)
+- Usability testing: 4/5 użytkowników wykonuje podstawowe zadanie
+- Test wysyłki formularza: email dociera do zespołu i użytkownika
+- Polityka prywatności i zgody RODO gotowe
+- Production environment skonfigurowany (Vercel, Supabase, Resend)
+- Monitoring i error tracking działa
+
+MVP jest uznane za sukces gdy:
+
+- Liczba leadów w pierwszym tygodniu > 0
+- 100% leadów dociera do zespołu z pełnymi danymi
+- Brak critical errors w produkcji
+- Users mogą znaleźć i wysłać formularz bez problemów
+
+---
+
+Koniec dokumentu PRD.
+
+Wersja: 1.0
+Data utworzenia: 2025-10-26
+Autor: Product Manager AI
+Status: Draft - wymaga review i zatwierdzenia przez stakeholders

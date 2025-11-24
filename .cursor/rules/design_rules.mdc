@@ -1,0 +1,319 @@
+---
+alwaysApply: false
+---
+
+## Figma MCP Design System Rules for this Repo
+
+These rules explain how to map Figma designs into this codebase using the Model Context Protocol. They document where tokens live, how components are structured, styling conventions, icon usage, assets, and project layout. Follow alongside the workspace AGENTS guidelines in `AGENTS.md` and feature-specific rules.
+
+### Design Tokens
+
+- **Token source**: Tailwind CSS v4 utility tokens are used directly (colors, typography, spacing, radius). No separate token JSON exists yet.
+- **Format**: Tokens are referenced as Tailwind classes (e.g., `text-slate-700`, `bg-red-700`, `rounded-lg`, `text-2xl`). Variants are composed with class-variance-authority (CVA).
+- **Transformation**: Tailwind v4 via PostCSS plugin; no custom theme file detected. Consider future CSS variables if design tokens are centralized from Figma.
+
+Code examples:
+
+```1:3:apps/foto/src/index.css
+@import "tailwindcss";
+@import "tw-animate-css";
+```
+
+```7:18:apps/foto/src/shared/components/ui/heading.tsx
+const headingVariants = cva(
+  "font-semibold text-slate-700 leading-tight tracking-normal leading-5",
+  {
+    variants: {
+      size: {
+        xs: "text-xs",
+        sm: "text-sm",
+        base: "text-base",
+        lg: "text-lg",
+        xl: "text-xl",
+        "2xl": "text-2xl",
+        "3xl": "text-3xl",
+        "4xl": "text-4xl",
+        "5xl": "text-5xl",
+        "6xl": "text-6xl",
+      },
+```
+
+```12:18:apps/foto/src/shared/components/ui/button.tsx
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  {
+    variants: {
+      variant: {
+        default: "bg-red-800 text-slate-50 hover:bg-red-700",
+        secondary: "bg-slate-200 text-slate-700 hover:bg-slate-300",
+        outline:
+          "border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-200",
+        ghost:
+          "text-slate-700 bg-transparent hover:bg-slate-100 hover:text-slate-950",
+      },
+```
+
+Guidance:
+
+- Map Figma color styles to Tailwind scales (e.g., Primary = `red-700/800`, Text Default = `slate-700`, Muted = `slate-500`).
+- Map typography styles to Tailwind text sizes/weights. Prefer `Heading` and `Text` components for semantic usage.
+- Spacing uses Tailwind spacing scale (e.g., `px-4`, `py-2`, `gap-4`). Border radius uses Tailwind rounded utilities.
+
+### Component Library
+
+- **Location**: Base UI components in `apps/foto/src/shared/components/ui/*.tsx`.
+- **Architecture**: Headless + composition. CVA for variants; Radix primitives for accessible behaviors; `cn` helper with `tailwind-merge` for class composition.
+- **Docs/Stories**: No Storybook present. Use code references and feature examples.
+
+Key patterns:
+
+```4:6:apps/foto/src/shared/lib/utils.ts
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+```
+
+```26:38:apps/foto/src/shared/components/ui/input.tsx
+  return (
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        inputVariants({ size }),
+        "focus-visible:border-slate-700 focus-visible:ring-2 focus-visible:ring-slate-700/20",
+        "disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-50",
+        "aria-invalid:border-red-700 aria-invalid:ring-red-700/20",
+        className,
+      )}
+      {...props}
+    />
+  );
+```
+
+Radix usage example:
+
+```32:43:apps/foto/src/shared/components/ui/dialog.tsx
+function DialogOverlay({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+  return (
+    <DialogPrimitive.Overlay
+      data-slot="dialog-overlay"
+      className={cn(
+        "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=open]:animate-in",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+```
+
+Usage of design-typography components:
+
+```56:70:apps/foto/src/shared/components/ui/heading.tsx
+function Heading({
+  className,
+  size,
+  weight,
+  color,
+  align,
+  as: Component = "h2",
+  ...props
+}: HeadingProps) {
+  return (
+    <Component
+      className={cn(headingVariants({ size, weight, color, align }), className)}
+      {...props}
+    />
+  );
+}
+```
+
+### Frameworks & Libraries
+
+- **Framework**: Next.js 16 with React 19 and TypeScript.
+- **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`); `class-variance-authority`, `tailwind-merge`.
+- **UI Behavior**: Radix UI primitives; `embla-carousel-react` for carousels; `sonner` for toasts.
+- **Icons**: `lucide-react`.
+- **Build/Tooling**: PostCSS pipeline; Biome for lint/format; Turborepo at workspace root.
+
+```13:21:apps/foto/package.json
+  "dependencies": {
+    "@radix-ui/react-checkbox": "^1.3.3",
+    "@radix-ui/react-collapsible": "^1.1.12",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-separator": "^1.1.7",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^0.548.0",
+    "next": "16.0.1",
+    "react": "19.2.0",
+    "tailwind-merge": "^3.3.1"
+  },
+```
+
+```1:5:apps/foto/postcss.config.mjs
+const config = {
+  plugins: ["@tailwindcss/postcss"],
+};
+
+export default config;
+```
+
+### Asset Management
+
+- **Storage**: Static assets in `apps/foto/public` (e.g., `logo.png`, `placeholder.svg`). Product/brand images via `next/image` with remote or local sources.
+- **Optimization**: Use `next/image` for automatic optimization, lazy loading (except logo eager), and sizing.
+- **CDN**: No explicit CDN config in `next.config.ts`. Next’s default image optimization is used.
+
+Example:
+
+```13:23:apps/foto/src/features/layout-header/logo.tsx
+      <I18nLink href="/">
+        <Image
+          src="/logo.png"
+          alt="logo"
+          width={120}
+          height={16}
+          loading="eager"
+          className="h-auto"
+        />
+      </I18nLink>
+```
+
+Guidance:
+
+- Export raster assets from Figma to `public/` and reference with absolute path `/...`.
+- For variable-sized or remote images, prefer `next/image` with width/height and `sizes` when responsive.
+
+### Icon System
+
+- **Source**: `lucide-react` package.
+- **Usage**: Import icons directly in components; pass `size` and style via Tailwind color utilities.
+- **Naming**: Use Lucide icon component names (e.g., `Search`, `XIcon`, `HomeIcon`).
+
+Examples:
+
+```1:1:apps/foto/src/shared/components/loading-page.tsx
+import { Loader2 } from "lucide-react";
+```
+
+```75:81:apps/foto/src/shared/components/ui/dialog.tsx
+        {showCloseButton && (
+          <DialogPrimitive.Close
+            data-slot="dialog-close"
+            className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
+          >
+            <XIcon />
+```
+
+Rules:
+
+- Always set an explicit `size` or rely on container utility `[&_svg]:size-*` patterns.
+- Colorize with Tailwind text color utilities (e.g., `text-red-700`, `text-slate-700`).
+
+### Styling Approach
+
+- **Methodology**: Tailwind CSS utilities with CVA for variants.
+- **Global styles**: Minimal, provided by Tailwind core and `tw-animate-css`.
+- **Responsive**: Tailwind responsive modifiers (`sm:`, `md:`, `lg:`, etc.). Keep layout constraints at layout level per `AGENTS.md`.
+
+Examples:
+
+```15:16:apps/foto/src/features/brands-page/our-industries/industry-card.tsx
+      <Card className="flex h-full flex-row items-center gap-4 p-2 transition-colors hover:bg-slate-100">
+        <div className="relative flex aspect-square h-20 w-20 items-center justify-center rounded-lg bg-red-700">
+```
+
+```30:38:apps/foto/src/features/layout-header/logo.tsx
+      <Link href="/" className="flex items-center gap-2">
+        <HomeIcon size={16} className="text-slate-700" />
+        <Text
+          as="span"
+          size="base"
+          weight="medium"
+          className="hidden lg:inline"
+        >
+```
+
+Rules:
+
+- Prefer server components; add `"use client"` only when necessary (interactivity, browser APIs).
+- Use `Heading`/`Text` instead of raw `h*`/`p` when expressing typography.
+- Use CVA variant props (`size`, `variant`, `weight`, etc.) to encode design variants from Figma.
+
+### Project Structure
+
+- **App**: `apps/foto` is a Next.js app with RSC routing under `src/app/[locale]/*`.
+- **Features**: Feature-first modules under `src/features/<feature>/...`.
+- **Shared**: Reusable UI primitives and utilities under `src/shared`.
+
+Overview:
+
+- `src/shared/components/ui/*` — design system primitives (button, input, heading, text, dialog, drawer, etc.)
+- `src/features/*` — composed feature UIs using primitives
+- `src/i18n/*` — internationalization (routing, messages)
+
+### Mapping Figma to Code
+
+- **Typography**: Map Figma text styles to `Heading`/`Text` props. Example: H2 Bold 24px ≈ `<Heading as="h2" size="2xl" weight="bold" />`.
+- **Colors**: Map Primary to `red-700/800` (brand), Body to `slate-700`, Muted to `slate-500`. Confirm scales visually.
+- **Buttons**: Map Figma button variants to `variant` and sizes to `size` in `Button`.
+- **Inputs**: Use `Input` with `size` variants; error states via `aria-invalid` styling.
+- **Spacing**: Translate Figma spacing to Tailwind spacing steps (4px grid ≈ `1` step). Use `gap-*`, `px-*`, `py-*`.
+- **Radius**: Use `rounded-*` Tailwind tokens; default is `rounded-lg` for most components.
+- **Overlays/Dialogs**: Use `Dialog` primitives; transitions handled via data-state + animate utilities.
+- **Icons**: Use `lucide-react`; size via `size` prop; color via `text-*` utilities.
+- **Images**: Export from Figma to `public/` or use remote URLs with `next/image`. Provide width/height.
+
+### Internationalization
+
+- Use `next-intl`. For links, prefer the shared `Link` component (wraps localized routing) instead of `next/link`.
+
+```56:87:apps/foto/src/shared/components/ui/link.tsx
+export function Link({
+  className,
+  variant,
+  size,
+  weight,
+  underline,
+  asChild,
+  href,
+  ...props
+}: LinkComponentProps) {
+  if (asChild) {
+    return (
+      <Slot
+        className={cn(
+          linkVariants({ variant, size, weight, underline }),
+          className,
+        )}
+        {...props}
+      />
+    );
+  }
+
+  return (
+    <I18nLink
+      href={href}
+      className={cn(
+        linkVariants({ variant, size, weight, underline }),
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+```
+
+### MCP Integration Tips
+
+- Use Context7 MCP to fetch the latest Next.js and Tailwind docs as needed.
+- When generating code from Figma nodes:
+  - Prefer composing from `src/shared/components/ui/*` primitives.
+  - Encode variant/states as CVA props, not duplicated class strings.
+  - Keep layout constraints outside components; apply responsive wrappers in feature/layout files.
+  - For icons, generate Lucide imports; for imagery, generate `next/image` with proper sizes and alt text.
+  - Do not introduce new token files unless aligning with a token pipeline; if needed, propose a `:root` CSS variable layer in `index.css` to map Figma tokens.

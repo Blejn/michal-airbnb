@@ -1,0 +1,465 @@
+---
+alwaysApply: false
+---
+
+# Podsumowanie Rozmowy - Planowanie PRD dla Wyszukiwarki TOPCAR
+
+## Decyzje Projektowe
+
+### Decyzje Architektoniczne
+
+1. **Integracja z WordPressem**: Aplikacja Next.js będzie osadzona w istniejącej stronie WordPress TOPCAR jako komponent SPA pod adresem `/znajdz-auto`. Header, menu i stopka WordPressa pozostają bez zmian.
+
+2. **Stack technologiczny**: Next.js 15 (najnowsza stabilna wersja) z wykorzystaniem App Router, integracja z Supabase jako źródłem danych.
+
+3. **Deployment**: Hosting na Vercel, środowisko lokalne na etapie developmentu.
+
+### Decyzje dotyczące danych
+
+4. **Źródło danych**: Baza Supabase z ~469,825 rekordami pojazdów. Klient zarządza aktualizacją danych, aplikacja tylko filtruje i pobiera.
+
+5. **Struktura danych pojazdu**:
+
+   - `title` - format: "YYYY Marka Model, Wersja" (np. "2005 Toyota Camry, LE")
+   - `specs` - JSON z specyfikacjami (Numer, VIN, Przebieg, Sprzedający, Dokument, Uszkodzenie, Status)
+   - `zdjecia_json` - ARRAY (\_text format) ze zdjęciami
+   - `imagelinksbid` - ARRAY (\_text format) dodatkowe zdjęcia
+   - `cena` - cena pojazdu
+   - `vin` - numer VIN
+   - `seller` - sprzedający
+   - `link` - link do aukcji
+   - `kalendarz` - data dodania
+
+6. **Parsowanie marek i modeli**: Ekstrahowanie z pola `title` z uwzględnieniem, że najpierw jest rocznik, potem marka i model. Backend będzie obsługiwał to przez `.includes()` lub podobne metody.
+
+### Decyzje dotyczące funkcjonalności
+
+7. **Wyszukiwanie i filtry**:
+
+   - Filtry: marka, model, rok, typ aukcji (Copart/IAAI), VIN/LOT
+   - Filtry działają kaskadowo i ograniczają wyniki
+   - Wyszukiwanie po VIN - proste pole tekstowe
+   - Domyślne sortowanie po polu `kalendarz` (najnowsze najpierw)
+
+8. **Paginacja**: Tak, z uwagi na dużą liczbę rekordów (469k+)
+
+9. **System kontaktowy**:
+
+   - Formularz zbiera: imię, email, telefon, komentarz
+   - Automatyczne dołączanie VIN wybranego pojazdu
+   - Wysyłka emaili przez **Resend**
+   - Adres docelowy przechowywany w zmiennych środowiskowych
+   - Potwierdzenie dla właściciela i klienta
+   - Wymagane zgody RODO
+
+10. **Widok listy (kafelki)**:
+
+    - Informacje na kafelku: model, rok, zdjęcie (główne), cena, podstawowe specs
+    - Przycisk "Skontaktuj się" otwiera modal z formularzem
+    - Domyślnie wyświetlane najnowsze pojazdy z pustymi filtrami
+    - Sidebar/bar z filtrowaniem
+
+11. **Strona szczegółów pojazdu**:
+    - Model, rok, VIN, cena, seller, link do aukcji
+    - Wszystkie informacje z pola `specs`
+    - Galeria zdjęć (z obu pól: `zdjecia_json` i `imagelinksbid`)
+    - Lightbox do przeglądania zdjęć w pełnym rozmiarze
+
+### Decyzje UX/UI
+
+12. **Design**: Zgodny z istniejącym designem TOPCAR (kolory, style). Inspiracja z przyciskiem "Otwarta oferta" z obecnej strony, ale dostosowany do nowego designu.
+
+13. **Responsive**: Mobile first approach, ale desktop i mobile równie priorytetowe.
+
+14. **Język interfejsu**: Tylko polski (na razie).
+
+15. **Loading states**: Implementacja skeleton screens dla lepszego UX.
+
+16. **Udostępnianie wyszukiwań**: Generowanie linków z parametrami query do udostępniania/zapisywania wyszukiwań.
+
+### Decyzje dotyczące wydajności i optymalizacji
+
+17. **Cache**: Wykorzystanie mechanizmów cache'owania Next.js dla popularnych zapytań.
+
+18. **SEO**: Indeksowanie przez wyszukiwarki - tak, strony szczegółów pojazdów mają być indeksowane.
+
+### Scope poza MVP
+
+19. **Analytics**: Odroczony do przyszłości (Google Analytics, Hotjar - olewamy na razie).
+
+20. **Przechowywanie leadów w bazie**: Na razie tylko email, bez dedykowanej tabeli w bazie.
+
+### Harmonogram i zasoby
+
+21. **Deadline**: Pół miesiąca (2 tygodnie).
+
+22. **Zespół**: Jedna osoba (użytkownik).
+
+23. **Przyszłość**: Możliwa przebudowa całego systemu w przyszłości, ale na razie focus na MVP.
+
+---
+
+## Zaakceptowane Rekomendacje
+
+1. **Next.js 15 z App Router** - Potwierdzony wybór najnowszej stabilnej wersji Next.js 15 z wykorzystaniem App Router dla lepszej wydajności i SSR.
+
+2. **Implementacja cache'owania** - Cache dla popularnych kombinacji filtrów w celu przyspieszenia działania aplikacji.
+
+3. **Rate limiting** - Dla formularza kontaktowego w celu uniknięcia spamu (rekomendowane do implementacji).
+
+4. **"Zapisz wyszukiwanie" przez linki** - Generowanie unikalnych linków z query params, które użytkownik może zapisać/udostępnić.
+
+5. **Komunikat "Brak wyników"** - Wyświetlanie przyjaznego komunikatu z sugestiami alternatywnymi.
+
+6. **Quick stats / Badges** - "Aktualnie dostępnych X pojazdów", badges na kartach ("Nowa aukcja", "Kończy się wkrótce", "Niski przebieg").
+
+7. **Sticky filtry** - Na desktop filtry pozostają widoczne podczas scrollowania (do rozważenia).
+
+8. **Loading states i skeleton screens** - Dla lepszego user experience podczas ładowania wyników.
+
+9. **Zgodność z RODO** - Polityka prywatności i wymagane zgody w formularzu kontaktowym.
+
+10. **Walidacja po stronie serwera** - Dla wszystkich formularzy, nie tylko po stronie klienta.
+
+11. **Zmienne środowiskowe** - Dla wszystkich wrażliwych danych (klucze API, credentials do bazy).
+
+12. **Error tracking** - Sentry lub podobne narzędzie dla szybkiego wykrywania błędów produkcyjnych (do rozważenia).
+
+13. **Dokumentacja techniczna** - Prosta dokumentacja opisująca strukturę projektu, API endpoints i integrację z Supabase.
+
+14. **Lightbox dla galerii zdjęć** - Implementacja zoom i przeglądania zdjęć.
+
+---
+
+## Główne Wymagania Funkcjonalne
+
+### 1. Wyszukiwarka z zaawansowanymi filtrami
+
+- Panel filtrów z opcjami: marka, model, rocznik, typ aukcji (Copart/IAAI), VIN/LOT
+- Filtry kaskadowe ograniczające dostępne opcje na podstawie wybranych kryteriów
+- Szybkie wyszukiwanie po VIN przez dedykowane pole tekstowe
+- Dynamiczne pobieranie marek i modeli z pola `title` w bazie danych
+- Domyślne sortowanie po najnowszych dodanych (pole `kalendarz`)
+
+### 2. Lista wyników z paginacją
+
+- Wyświetlanie pojazdów w formie kafelków/kart
+- Każdy kafelek zawiera: zdjęcie główne, model, rok, cenę, podstawowe informacje
+- Paginacja dla obsługi dużego wolumenu danych (469k+ rekordów)
+- Domyślnie wyświetlane najnowsze pojazdy z pustymi filtrami
+- Skeleton screens podczas ładowania wyników
+
+### 3. Strona szczegółów pojazdu
+
+- Pełne informacje: model, rok, VIN, cena, przebieg, status, uszkodzenia
+- Dane z pola `specs` (format JSON): Numer, VIN, Przebieg, Sprzedający, Dokument, Uszkodzenie, Status
+- Galeria zdjęć z lightbox do przeglądania w pełnym rozmiarze
+- Link do aukcji zewnętrznej
+- Przycisk "Skontaktuj się" prowadzący do formularza
+
+### 4. System kontaktowy z automatyczną wysyłką emaili
+
+- Modal/formularz z polami: imię, email, telefon, komentarz
+- Automatyczne dołączanie VIN wybranego pojazdu do zgłoszenia
+- Integracja z **Resend** do wysyłki emaili
+- Potwierdzenie wysłania dla użytkownika (email + komunikat UI)
+- Powiadomienie dla zespołu TOPCAR z pełnym kontekstem wyboru
+- Checkbox zgody RODO (wymagany)
+
+### 5. Integracja z istniejącym WordPressem
+
+- Osadzenie jako SPA pod `/znajdz-auto`
+- Zachowanie header, menu, stopki z WordPressa
+- Spójny design z istniejącą stroną TOPCAR
+
+### 6. Integracja z Supabase
+
+- Połączenie z bazą zawierającą ~469,825 rekordów
+- Tylko operacje odczytu (READ) - klient zarządza danymi
+- Obsługa pól: `title`, `specs`, `zdjecia_json`, `imagelinksbid`, `cena`, `vin`, `seller`, `link`, `kalendarz`
+
+---
+
+## Kluczowe Historie Użytkownika
+
+### Historia 1: Wyszukiwanie pojazdu według kryteriów
+
+**JAKO** użytkownik zainteresowany zakupem auta z aukcji  
+**CHCĘ** filtrować pojazdy według marki, modelu, roku i typu aukcji  
+**ABY** szybko znaleźć auto spełniające moje wymagania
+
+**Ścieżka:**
+
+1. Użytkownik wchodzi na `/znajdz-auto`
+2. Widzi panel filtrów i listę najnowszych pojazdów
+3. Wybiera markę (np. Toyota) - lista modeli się aktualizuje
+4. Wybiera model (np. Camry)
+5. Ustawia zakres lat (np. 2015-2020)
+6. Klika "Szukaj" lub filtry działają na żywo
+7. Widzi przefiltrowane wyniki z paginacją
+
+### Historia 2: Przeglądanie szczegółów pojazdu
+
+**JAKO** użytkownik przeglądający wyniki wyszukiwania  
+**CHCĘ** zobaczyć szczegółowe informacje i zdjęcia wybranego pojazdu  
+**ABY** ocenić, czy jest wart zainteresowania
+
+**Ścieżka:**
+
+1. Użytkownik klika na kafelek pojazdu z listy wyników
+2. Przechodzi na dedykowaną stronę szczegółów
+3. Widzi pełne informacje: specs, VIN, cenę, stan
+4. Przegląda galerię zdjęć w lightbox
+5. Może otworzyć link do aukcji w nowej karcie
+6. Klika "Skontaktuj się" jeśli jest zainteresowany
+
+### Historia 3: Kontakt w sprawie pojazdu
+
+**JAKO** użytkownik zainteresowany konkretnym pojazdem  
+**CHCĘ** łatwo skontaktować się z zespołem TOPCAR  
+**ABY** otrzymać pomoc w ocenie opłacalności i procesie zakupu
+
+**Ścieżka:**
+
+1. Użytkownik klika "Skontaktuj się" (z kafelka lub ze strony szczegółów)
+2. Otwiera się modal z formularzem
+3. Wypełnia: imię, email, telefon, opcjonalny komentarz
+4. Zaznacza zgodę RODO
+5. Wysyła formularz
+6. Widzi komunikat potwierdzenia
+7. Otrzymuje email potwierdzający zgłoszenie
+8. Zespół TOPCAR otrzymuje email z danymi użytkownika i VIN pojazdu
+
+### Historia 4: Szybkie wyszukiwanie po VIN
+
+**JAKO** użytkownik mający numer VIN konkretnego pojazdu  
+**CHCĘ** szybko znaleźć ten pojazd w systemie  
+**ABY** zobaczyć jego szczegóły i skontaktować się w jego sprawie
+
+**Ścieżka:**
+
+1. Użytkownik wpisuje VIN w dedykowane pole wyszukiwania
+2. System znajduje pojazd w bazie
+3. Użytkownik jest przekierowany bezpośrednio na stronę szczegółów
+4. Może od razu skontaktować się z zespołem
+
+### Historia 5: Udostępnianie wyszukiwania
+
+**JAKO** użytkownik który znalazł interesujące auta  
+**CHCĘ** zapisać link do moich filtrów lub udostępnić go innej osobie  
+**ABY** móc wrócić do tych wyników lub pokazać je komuś
+
+**Ścieżka:**
+
+1. Użytkownik ustawia filtry (np. Toyota Camry 2015-2020)
+2. URL automatycznie aktualizuje się z query params
+3. Kopiuje link z przeglądarki
+4. Może go zapisać, wysłać znajomemu, etc.
+5. Każdy kto otworzy ten link zobaczy te same wyfiltrowane wyniki
+
+---
+
+## Kryteria Sukcesu i Pomiar
+
+### 1. Funkcjonalność wyszukiwarki
+
+- ✅ **Kryteria**: Zwracanie wyników w < 3 sekundy dla typowych zapytań
+- 📊 **Pomiar**: Manual testing, performance monitoring w produkcji
+- ✅ **Kryteria**: 100% zgodność wyników z wybranymi filtrami
+- 📊 **Pomiar**: QA testing, sample data verification
+
+### 2. Skuteczność generowania leadów
+
+- ✅ **Kryteria**: 100% zgłoszeń trafia do zespołu z pełnymi danymi (VIN, kontakt użytkownika)
+- 📊 **Pomiar**: Monitoring emaili przez pierwsze 2 tygodnie, weryfikacja z zespołem
+- ✅ **Kryteria**: Użytkownik otrzymuje potwierdzenie w < 5 sekund
+- 📊 **Pomiar**: Tracking czasu odpowiedzi formularza
+
+### 3. Użyteczność interfejsu
+
+- ✅ **Kryteria**: Użytkownik potrafi wyszukać pojazd bez instrukcji
+- 📊 **Pomiar**: Testy użyteczności z 3-5 osobami przed wdrożeniem
+- ✅ **Kryteria**: Brak błędów w formularzu kontaktowym
+- 📊 **Pomiar**: Error tracking (Sentry), monitoring zgłoszeń
+
+### 4. Wydajność techniczna
+
+- ✅ **Kryteria**: Działanie na desktop i mobile bez problemów
+- 📊 **Pomiar**: Cross-browser/device testing
+- ✅ **Kryteria**: Lighthouse score > 80 dla Performance, Accessibility
+- 📊 **Pomiar**: Lighthouse audits przed deploymentem
+
+### 5. SEO i dostępność
+
+- ✅ **Kryteria**: Strony szczegółów pojazdów są indeksowane przez Google
+- 📊 **Pomiar**: Google Search Console po 2 tygodniach od wdrożenia
+- ✅ **Kryteria**: Poprawne meta tagi dla każdej strony pojazdu
+- 📊 **Pomiar**: Manual inspection, SEO tools
+
+### Główny wskaźnik sukcesu MVP
+
+> **Liczba poprawnie dostarczonych leadów w pierwszym tygodniu > 0** (walidacja, że cały flow działa)
+
+---
+
+## Architektura Techniczna
+
+### Frontend
+
+- Next.js 15 (App Router)
+- React Server Components + Client Components
+- TypeScript
+- Tailwind CSS (zgodny z designem TOPCAR)
+- Biblioteki UI: do określenia (shadcn/ui, Radix, lub custom)
+
+### Backend
+
+- Next.js API Routes (Route Handlers)
+- Supabase Client dla połączenia z bazą (READ only)
+- Resend SDK do wysyłki emaili
+
+### Baza danych
+
+- Supabase PostgreSQL (istniejąca baza klienta)
+- ~469,825 rekordów pojazdów
+- Aktualizacja przez klienta (poza scope MVP)
+
+### Hosting i deployment
+
+- Vercel (produkcja)
+- Środowisko lokalne (development)
+
+### Bezpieczeństwo
+
+- Rate limiting na formularzu kontaktowym
+- Walidacja server-side wszystkich inputów
+- Zmienne środowiskowe dla credentials
+- Zgodność z RODO (polityka prywatności, zgody)
+
+### Optymalizacje
+
+- Cache'owanie popularnych zapytań
+- Image optimization (Next.js Image component)
+- Lazy loading dla zdjęć w galerii
+- Skeleton screens dla loading states
+
+---
+
+## Scope Poza MVP (Przyszłe Iteracje)
+
+- ❌ Rejestracja i logowanie użytkowników
+- ❌ System profili i zapisanych wyszukiwań
+- ❌ Kalkulator całkowitego kosztu importu
+- ❌ Raporty historii pojazdu VIN
+- ❌ Szczegółowa analiza opłacalności
+- ❌ Panel administracyjny
+- ❌ Integracja z CRM
+- ❌ Generowanie dokumentów celnych
+- ❌ Zaawansowana analityka (GA, Hotjar)
+- ❌ Przechowywanie leadów w bazie danych
+- ❌ Multi-language support
+- ❌ Możliwość licytacji/składania ofert
+
+---
+
+## Nierozwiązane Kwestie (Wymaga Wyjaśnienia)
+
+### Wymagają wyjaśnienia przed implementacją:
+
+1. **Treść emaili**:
+
+   - Dokładny szablon emaila dla zespołu TOPCAR (format, treść, układ)
+   - Szablon emaila potwierdzającego dla użytkownika (treść, tone of voice)
+   - Subject line dla obu typów emaili
+
+2. **Szczegóły designu**:
+
+   - Oczekiwanie na screenshoty obecnej strony TOPCAR dla zachowania spójności
+   - Brand guidelines: kolory (#HEX), fonty, spacing, komponenty UI
+   - Dokładny wygląd kafelków pojazdów
+   - Layout panelu filtrów (sidebar vs top bar)
+   - Wygląd modalu formularza kontaktowego
+
+3. **Integracja z WordPressem**:
+
+   - Szczegóły techniczne osadzenia Next.js w WP (iframe, custom endpoint, plugin?)
+   - Sposób przekazywania stylów i skryptów
+   - Obsługa routingu między WP a Next.js
+
+4. **Parsowanie danych**:
+
+   - Przykładowe dane z Supabase (sample JSON) dla wszystkich pól
+   - Edge cases w parsowaniu `title` (nietypowe formaty, brakujące dane)
+   - Format danych w `specs` (czy zawsze te same klucze?)
+   - Format linków w `zdjecia_json` i `imagelinksbid`
+
+5. **Szczegóły formularza**:
+
+   - Które pola są wymagane, które opcjonalne?
+   - Walidacja numeru telefonu (format polski vs międzynarodowy?)
+   - Maksymalna długość komentarza
+   - Treść checkboxu zgody RODO (kto przygotuje tekst prawny?)
+
+6. **Badges i statusy**:
+
+   - Jakie konkretnie badges chcemy ("Nowa aukcja", "Kończy się wkrótce")?
+   - Logika określania tych statusów (pola w bazie? obliczenia?)
+   - "Quick stats" - jakie dokładnie statystyki? (liczba aut, nowe dzisiaj, etc.)
+
+7. **Error handling**:
+
+   - Komunikaty błędów (teksty w języku polskim)
+   - Co się dzieje gdy Supabase nie odpowiada?
+   - Co gdy Resend nie może wysłać emaila?
+   - Fallback dla braku zdjęć pojazdu
+
+8. **SEO**:
+
+   - Format title i description dla stron szczegółów (szablon)
+   - Czy generować Open Graph images dla social sharing?
+   - Sitemap - czy włączać strony pojazdów? (469k URLs?)
+
+9. **Paginacja**:
+
+   - Ile wyników na stronę? (12, 24, 48?)
+   - Czy użytkownik może to zmieniać?
+
+10. **Dane Supabase - dostęp**:
+    - Credentials/API keys do bazy (w bezpieczny sposób)
+    - Czy istnieje Supabase RLS (Row Level Security)?
+    - Czy możemy tworzyć indexy dla optymalizacji zapytań?
+
+### Do ustalenia w trakcie developmentu (nice to have przed startem):
+
+11. **Lightbox** - konkretna biblioteka czy custom implementation?
+12. **Filtry** - czy mają się resetować między sesjami?
+13. **URL structure** - `/znajdz-auto`, ale co ze stroną szczegółów? (`/znajdz-auto/pojazd/[id]`? `/znajdz-auto/[vin]`?)
+14. **Loading states** - ile skeleton items pokazywać?
+15. **Mobile menu** - jak będą wyglądały filtry na mobile? (drawer, accordion?)
+
+---
+
+## Następne Kroki
+
+Aby kontynuować z implementacją, rekomendowane jest:
+
+1. **Uzupełnienie brakujących informacji** z sekcji "Nierozwiązane Kwestie" (szczególnie punkty 1-10)
+
+2. **Otrzymanie dostępu do**:
+
+   - Przykładowych danych z Supabase (JSON sample)
+   - Screenshotów obecnej strony TOPCAR
+   - Brand guidelines lub style guide
+   - Credentials do Supabase (dev environment)
+
+3. **Przygotowanie przez klienta**:
+
+   - Tekstów emaili (szablony)
+   - Tekstów RODO i polityki prywatności
+   - Adresu email docelowego dla leadów
+
+4. **Rozpoczęcie implementacji** od:
+   - Setup projektu Next.js 15
+   - Integracja z Supabase (connection testing)
+   - Implementacja podstawowej struktury routing
+   - Design system / komponenty UI
