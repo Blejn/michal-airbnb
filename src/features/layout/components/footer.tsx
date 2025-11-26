@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
@@ -46,8 +48,19 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-primary-foreground/20 pt-8 text-center text-primary-foreground/70">
-          <p>&copy; {currentYear} Pochyła 80. Wszelkie prawa zastrzeżone.</p>
+        <div className="border-t border-primary-foreground/20 pt-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <p className="text-primary-foreground/70 text-center md:text-left">
+            &copy; {currentYear} Pochyła 80. Wszelkie prawa zastrzeżone.
+          </p>
+          <div className="flex items-center justify-center md:justify-end bg-white p-2 rounded-lg">
+            <Image
+              src="/images/logo.png"
+              alt="Krajowy Plan Odbudowy"
+              width={400}
+              height={100}
+              className="h-auto w-auto max-h-16 object-contain"
+            />
+          </div>
         </div>
       </div>
     </footer>
