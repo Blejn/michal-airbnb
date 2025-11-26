@@ -34,9 +34,9 @@ const Navigation = () => {
             isScrolled ? "text-primary" : "text-cream"
           }`}
         >
-          Forest Retreat
+          Pochyła 80
         </h2>
-        
+
         <div className="hidden md:flex items-center gap-8">
           <button
             onClick={() => scrollToSection("amenities")}
@@ -68,4 +68,3 @@ const Navigation = () => {
 };
 
 export default Navigation;
-
