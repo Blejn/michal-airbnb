@@ -11,7 +11,8 @@ const Contact = () => {
             Zarezerwuj Swój Pobyt
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Skontaktuj się z nami, aby zarezerwować niezapomniane chwile w naszym domku
+            Skontaktuj się z nami, aby zarezerwować niezapomniane chwile w
+            naszym domku
           </p>
         </div>
 
@@ -23,8 +24,11 @@ const Contact = () => {
                   <Phone className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="font-semibold text-foreground mb-2">Telefon</h3>
-                <a href="tel:+48123456789" className="text-muted-foreground hover:text-accent transition-smooth">
-                  +48 123 456 789
+                <a
+                  href="tel:+48603220688"
+                  className="text-muted-foreground hover:text-accent transition-smooth"
+                >
+                  +48 603 220 688
                 </a>
               </div>
 
@@ -33,7 +37,10 @@ const Contact = () => {
                   <Mail className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="font-semibold text-foreground mb-2">Email</h3>
-                <a href="mailto:kontakt@domek.pl" className="text-muted-foreground hover:text-accent transition-smooth">
+                <a
+                  href="mailto:kontakt@domek.pl"
+                  className="text-muted-foreground hover:text-accent transition-smooth"
+                >
                   kontakt@domek.pl
                 </a>
               </div>
@@ -42,9 +49,11 @@ const Contact = () => {
                 <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                   <MapPin className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">Lokalizacja</h3>
+                <h3 className="font-semibold text-foreground mb-2">
+                  Lokalizacja
+                </h3>
                 <p className="text-muted-foreground">
-                  Blisko natury
+                  ul. Pochyła 80, 44-251 Rybnik
                 </p>
               </div>
             </div>
@@ -62,4 +71,3 @@ const Contact = () => {
 };
 
 export default Contact;
-
