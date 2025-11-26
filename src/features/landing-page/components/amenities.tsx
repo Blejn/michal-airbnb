@@ -5,22 +5,26 @@ const amenities = [
   {
     icon: Bath,
     title: "Jacuzzi",
-    description: "Relaksujące jacuzzi na świeżym powietrzu, idealne na wieczorne chwile odprężenia pod gwiazdami.",
+    description:
+      "Relaksujące jacuzzi na świeżym powietrzu, idealne na wieczorne chwile odprężenia pod gwiazdami.",
   },
   {
     icon: Flame,
     title: "Sauna",
-    description: "Prywatna sauna fińska dla maksymalnej regeneracji ciała i umysłu w naturalnym otoczeniu.",
+    description:
+      "Prywatna sauna fińska dla maksymalnej regeneracji ciała i umysłu w naturalnym otoczeniu.",
   },
   {
     icon: ChefHat,
     title: "Wyposażona Kuchnia",
-    description: "W pełni wyposażona nowoczesna kuchnia ze wszystkimi udogodnieniami do przygotowania posiłków.",
+    description:
+      "W pełni wyposażona nowoczesna kuchnia ze wszystkimi udogodnieniami do przygotowania posiłków.",
   },
   {
     icon: BedDouble,
     title: "Komfort & Przestrzeń",
-    description: "Elegancka sypialnia i luksusowa łazienka zapewniające pełen relaks i prywatność.",
+    description:
+      "Dwie eleganckie sypialnie oraz rozkładana sofa w salonie – domek wygodnie pomieści 4–5 osób, zapewniając pełen relaks i prywatność.",
   },
 ];
 
@@ -33,7 +37,8 @@ const Amenities = () => {
             Co Oferujemy
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Każdy detal został zaprojektowany z myślą o Twoim komforcie i relaksie
+            Każdy detal został zaprojektowany z myślą o Twoim komforcie i
+            relaksie
           </p>
         </div>
 
@@ -67,4 +72,3 @@ const Amenities = () => {
 };
 
 export default Amenities;
-
