@@ -38,10 +38,10 @@ const Contact = () => {
                 </div>
                 <h3 className="font-semibold text-foreground mb-2">Email</h3>
                 <a
-                  href="mailto:kontakt@domek.pl"
+                  href="mailto:pochyla80@wp.pl"
                   className="text-muted-foreground hover:text-accent transition-smooth"
                 >
-                  kontakt@domek.pl
+                  pochyla80@wp.pl
                 </a>
               </div>
 
@@ -59,8 +59,8 @@ const Contact = () => {
             </div>
 
             <div className="text-center">
-              <Button size="lg" className="px-8">
-                Zarezerwuj Teraz
+              <Button size="lg" className="px-8" asChild>
+                <a href="mailto:pochyla80@wp.pl">Zarezerwuj Teraz</a>
               </Button>
             </div>
           </CardContent>

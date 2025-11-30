@@ -31,7 +31,7 @@ const Footer = () => {
                   href="mailto:kontakt@domek.pl"
                   className="hover:text-accent transition-smooth"
                 >
-                  kontakt@domek.pl
+                  pochyla80@wp.pl
                 </a>
               </li>
             </ul>
