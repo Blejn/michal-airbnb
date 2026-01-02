@@ -18,9 +18,9 @@ const images = [
   },
   { src: "/images/interior-living.jpg", alt: "Przytulny salon z jadalnią" },
   { src: "/images/interior-dining.jpg", alt: "Przestrzeń dzienna z widokiem" },
-  { src: "/images/IMG_5695.jpg", alt: "Sypialnia z widokiem na las" },
-  { src: "/images/IMG_5696.jpg", alt: "Sypialnia z widokiem na las" },
-  { src: "/images/IMG_5697.jpg", alt: "Sypialnia z widokiem na las" },
+  { src: "/images/IMG_5695.jpeg", alt: "Sypialnia z widokiem na las" },
+  { src: "/images/IMG_5696.jpeg", alt: "Sypialnia z widokiem na las" },
+  { src: "/images/IMG_5697.jpeg", alt: "Sypialnia z widokiem na las" },
 ];
 
 const Gallery = () => {
