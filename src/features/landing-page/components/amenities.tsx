@@ -24,7 +24,7 @@ const amenities = [
     icon: BedDouble,
     title: "Komfort & Przestrzeń",
     description:
-      "Dwie eleganckie sypialnie oraz rozkładana sofa w salonie – domek wygodnie pomieści 4–5 osób, zapewniając pełen relaks i prywatność.",
+      "Domek oferuje dwie eleganckie sypialnie oraz rozkładaną sofę w salonie – wygodnie pomieści 4–5 osób, gwarantując relaks, komfort i prywatność zarówno rodzinom, jak i grupom przyjaciół.",
   },
 ];
 

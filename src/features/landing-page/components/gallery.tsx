@@ -5,13 +5,22 @@ import { X } from "lucide-react";
 import Image from "next/image";
 
 const images = [
-  { src: "/images/hero-exterior.jpg", alt: "Luksusowy domek - widok z zewnątrz" },
+  {
+    src: "/images/hero-exterior.jpg",
+    alt: "Luksusowy domek - widok z zewnątrz",
+  },
   { src: "/images/exterior-entrance.jpg", alt: "Nowoczesne wejście z tarasem" },
   { src: "/images/exterior-side.jpg", alt: "Architektura domku" },
   { src: "/images/interior-kitchen.jpg", alt: "W pełni wyposażona kuchnia" },
-  { src: "/images/interior-hallway.jpg", alt: "Jasny korytarz z drewnianym sufitem" },
+  {
+    src: "/images/interior-hallway.jpg",
+    alt: "Jasny korytarz z drewnianym sufitem",
+  },
   { src: "/images/interior-living.jpg", alt: "Przytulny salon z jadalnią" },
   { src: "/images/interior-dining.jpg", alt: "Przestrzeń dzienna z widokiem" },
+  { src: "/images/IMG_5695.jpg", alt: "Sypialnia z widokiem na las" },
+  { src: "/images/IMG_5696.jpg", alt: "Sypialnia z widokiem na las" },
+  { src: "/images/IMG_5697.jpg", alt: "Sypialnia z widokiem na las" },
 ];
 
 const Gallery = () => {
@@ -95,4 +104,3 @@ const Gallery = () => {
 };
 
 export default Gallery;
-
