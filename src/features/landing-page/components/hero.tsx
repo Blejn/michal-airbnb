@@ -26,10 +26,10 @@ const Hero = () => {
       {/* Content */}
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto animate-fade-in">
         <h1 className="text-5xl md:text-7xl font-serif font-bold text-cream mb-6 text-balance">
-          Twój Luksusowy Azyl w Naturze
+          Twój Spokojny Zakątek
         </h1>
         <p className="text-xl md:text-2xl text-cream/90 mb-8 font-light">
-          Odkryj harmonię nowoczesnego komfortu i naturalnego piękna
+          Relaks w cichej okolicy
         </p>
       </div>
 
